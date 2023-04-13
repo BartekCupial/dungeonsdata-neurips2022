@@ -127,3 +127,6 @@ ttyrec_batch_size: 512
 ttyrec_unroll_length: 32
 ttyrec_envpool_size: 4
 ttyrec_cpus: 10 
+
+use_checkpoint_actor: True
+model_checkpoint_path: /home/mbortkie/repos/rl/dungeonsdata-neurips2022/checkpoint/checkpoint_v482821.tar
