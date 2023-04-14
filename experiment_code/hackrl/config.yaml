@@ -130,3 +130,4 @@ ttyrec_cpus: 10
 
 use_checkpoint_actor: True
 model_checkpoint_path: /home/mostasze/github/dungeonsdata-neurips2022/checkpoint/checkpoint_v482821.tar
+unfreeze_actor_steps: 10_000_000

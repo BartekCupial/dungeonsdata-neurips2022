@@ -1012,6 +1012,8 @@ def main(cfg):
         now = time.time()
 
         steps = learner_state.global_stats["env_train_steps"].result()
+        if steps > FLAGS.unfreeze_actor_steps:
+            model.unfreeze(core=True, actor=True, critic=True)
         if steps >= FLAGS.total_steps:
             logging.info("Stopping training after %i steps", steps)
             break
