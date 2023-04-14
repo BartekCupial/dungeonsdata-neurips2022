@@ -1,6 +1,8 @@
 Bootstrap: docker
+# gmum
 # From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu20.04
-From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+# athena
+From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04 
 
 %environment
     export DEBIAN_FRONTEND=noninteractive
@@ -68,6 +70,15 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
     pybind11_INCLUDE_DIR=/opt/conda/share/cmake/pybind11
     cd render_utils && pip install -e . && cd ..
     pip install -e .
+
+    pip install transformers~=4.5.1
+    pip install packaging~=21.3
+
+    # install my version of nle
+    cd /opt/
+    git clone --recursive https://github.com/BartekCupial/nle.git
+    cd /opt/nle
+    pip install -e .["dev"]
 
     # Test NLE and moolib.
     python -c 'import gym; import nle; env = gym.make("NetHackScore-v0"); env.reset()'
