@@ -8,6 +8,12 @@ python -m moolib.broker &
 # python -m debugpy --wait-for-client --listen 5678 ./hackrl/experiment.py connect=$BROKER_IP:$BROKER_PORT exp_set=2G num_actor_cpus=20 exp_point=monk-APPO  total_steps=2_000_000_000 character='mon-hum-neu-mal'
 
 
+# Inverse Model
+# python -m hackrl.experiment connect=$BROKER_IP:$BROKER_PORT exp_point=@-AA-IV num_actor_cpus=20 total_steps=2_000_000_000 actor_batch_size=256 batch_size=128 ttyrec_batch_size=512 supervised_loss=1 adam_learning_rate=0.001 behavioural_clone=True group='@-AA-IV' use_inverse_model=true use_inverse_model_only=true augment_inverse_random=true
+# python -m hackrl.experiment connect=$BROKER_IP:$BROKER_PORT exp_point=monk-AA-IV num_actor_cpus=20 total_steps=2_000_000_000 actor_batch_size=256 batch_size=128 ttyrec_batch_size=512 supervised_loss=1 adam_learning_rate=0.001 behavioural_clone=True character='mon-hum-neu-mal' group='monk-AA-IV' use_inverse_model=true use_inverse_model_only=true augment_inverse_random=true
+# python -m hackrl.experiment connect=$BROKER_IP:$BROKER_PORT exp_point=@-AA-IV num_actor_cpus=20 total_steps=2_000_000_000 actor_batch_size=256 batch_size=128 ttyrec_batch_size=512 supervised_loss=1 adam_learning_rate=0.001 behavioural_clone=True group='@-AA-IV' use_inverse_model=true use_inverse_model_only=true augment_inverse_random=false
+# python -m hackrl.experiment connect=$BROKER_IP:$BROKER_PORT exp_point=monk-AA-IV num_actor_cpus=20 total_steps=2_000_000_000 actor_batch_size=256 batch_size=128 ttyrec_batch_size=512 supervised_loss=1 adam_learning_rate=0.001 behavioural_clone=True character='mon-hum-neu-mal' group='monk-AA-IV' use_inverse_model=true use_inverse_model_only=true augment_inverse_random=false
+
 # APPO Experiments
 # python -m hackrl.experiment connect=$BROKER_IP:$BROKER_PORT exp_set=2G num_actor_cpus=20 exp_point=@-APPO     total_steps=2_000_000_000 group='@-APPO'
 # python -m hackrl.experiment connect=$BROKER_IP:$BROKER_PORT exp_set=2G num_actor_cpus=20 exp_point=monk-APPO  total_steps=2_000_000_000 character='mon-hum-neu-mal' group='monk-APPO'
