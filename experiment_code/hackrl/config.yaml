@@ -38,7 +38,7 @@ connect: 0.0.0.0:4431
 crop_dim: 18
 device: "cuda:0"
 discounting: 0.999
-entity: gmum
+entity: mostaszewski
 entropy_cost: 0.001
 env:
   name: challenge  # One of challenge, staircase, pet, eat, gold, score, scout, oracle.
@@ -129,4 +129,4 @@ ttyrec_envpool_size: 4
 ttyrec_cpus: 10 
 
 use_checkpoint_actor: True
-model_checkpoint_path: /home/mbortkie/repos/rl/dungeonsdata-neurips2022/checkpoint/checkpoint_v482821.tar
+model_checkpoint_path: /home/mostasze/github/dungeonsdata-neurips2022/checkpoint/checkpoint_v482821.tar

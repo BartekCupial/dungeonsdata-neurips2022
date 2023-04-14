@@ -72,6 +72,8 @@ def create_model(flags, device):
     model = model_cls(DUNGEON_SHAPE, action_space, flags, device)
     model.to(device=device)
 
+    initialize_weights(flags, model)
+
     if flags['use_checkpoint_actor']:
 
         def distil_actor_nad_core(load_data):
@@ -88,8 +90,6 @@ def create_model(flags, device):
         model.load_state_dict(distil_actor_nad_core(load_data), strict=False)
         model.freeze(core=True, actor=True, critic=False)
 
-
-    initialize_weights(flags, model)
     return model
 
 
