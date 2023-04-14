@@ -101,6 +101,13 @@ class TtyrecEnvPool:
                 "prev_action": torch.zeros(self.prev_action_shape, dtype=torch.uint8),
             }
 
+            gameids = np.array(list(map(int, self.dataset_scores.keys()))).max()
+            max_scores = np.zeros(gameids + 1)
+
+            for key, value in self.dataset_scores.items():
+                max_scores[int(key)] = value
+            max_scores = torch.from_numpy(max_scores).to(torch.float32)
+
             prev_action = torch.zeros(
                 (self.ttyrec_batch_size, 1), dtype=torch.uint8
             ).to(self.device)
@@ -134,6 +141,9 @@ class TtyrecEnvPool:
                         "tty_cursor": torch.from_numpy(cursor_uint8),
                         "screen_image": mb_tensors["screen_image"],
                         "done": mb_tensors["done"].bool(),
+                        "timesteps": mb_tensors["timestamps"].float(),
+                        "max_scores": max_scores[mb["gameids"]],
+                        "mask": torch.ones_like(mb_tensors["timestamps"]).bool()
                     }
 
                     if "keypresses" in mb_tensors:
@@ -213,7 +223,7 @@ class TtyrecEnvPool:
 
 
 def make_ttyrec_envpool(threadpool, flags):
-    dbfilename = "./ttyrecs/ttyrecs.db"
+    dbfilename = "./ttyrecs.db"
 
     if not os.path.isfile(dbfilename):
         alt_path = "/nle/nld-nao"
@@ -449,8 +459,10 @@ class EnvBatchState:
     def __init__(self, flags, model):
         batch_size = flags.actor_batch_size
         device = flags.device
+        self.device = device
         self.batch_size = batch_size
         self.prev_action = torch.zeros(batch_size).long().to(device)
+        self.timesteps = torch.zeros(batch_size).to(device)
         self.future = None
         self.core_state = model.initial_state(batch_size=batch_size)
         self.core_state = nest.map(lambda x: x.to(device), self.core_state)
@@ -469,6 +481,7 @@ class EnvBatchState:
         self.discounted_running_reward *= self.discount
         self.discounted_running_reward += env_outputs["reward"]
         self.step_count += 1
+        self.timesteps += 1
 
         done = env_outputs["done"]
 
@@ -493,6 +506,7 @@ class EnvBatchState:
         self.discounted_running_reward *= not_done
         self.running_reward *= not_done
         self.step_count *= not_done
+        self.timesteps *= not_done.to(self.device)
 
 
 def compute_baseline_loss(
@@ -1005,6 +1019,10 @@ def main(cfg):
             TTYREC_HIDDEN_STATE.append(hs)
         TTYREC_ENVPOOL = make_ttyrec_envpool(tp, FLAGS)
 
+        score_target = max(TTYREC_ENVPOOL.dataset_scores.values())
+    else:
+        score_target = 100000
+
     # Run.
     now = time.time()
     prev_env_train_steps = 0
@@ -1136,6 +1154,9 @@ def main(cfg):
             )
 
             env_outputs["prev_action"] = env_state.prev_action
+            env_outputs["timesteps"] = env_state.timesteps
+            env_outputs["max_scores"] = torch.ones_like(env_state.timesteps) * score_target #TODO: scale? 100k is a big number
+            env_outputs["mask"] = torch.ones_like(env_state.timesteps).to(torch.bool)
             prev_core_state = env_state.core_state
             model.eval()
             with torch.no_grad():
