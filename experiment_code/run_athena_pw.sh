@@ -11,10 +11,10 @@
 
 
 singularity exec --nv \
-    -H /net/people/plgrid/plgmostaszewski/dungeonsdata-neurips2022/experiment_code \
-    --env WANDB_API_KEY=d2f9309c1cee36dc7ad726c57e4eba04974d9914 \
+    -H /net/tscratch/people/plgmbortkiewicz/repos/dungeonsdata-neurips2022/experiment_code \
+    --env WANDB_API_KEY=3307fa1432be95ad74806558208e9c2af21a43d5 \
     --env WANDBPWD=$PWD \
-    -B /net/pr2/projects/plgrid/plgg_pw_crl/mostaszewski/nle:/nle \
+    -B /net/pr2/projects/plgrid/plgg_pw_crl/mbortkiewicz/nle:/nle \
     -B $TMPDIR:/tmp \
-    /net/pr2/projects/plgrid/plgg_pw_crl/mostaszewski/dungeons.sif \
+    /net/pr2/projects/plgrid/plgggmum_crl/bcupial/dungeons.sif \
     ./train.sh

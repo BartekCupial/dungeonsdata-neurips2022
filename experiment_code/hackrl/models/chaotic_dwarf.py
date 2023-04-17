@@ -292,17 +292,16 @@ class ChaoticDwarvenGPT5(nn.Module):
             for _ in range(2)
         )
 
-    def set_requires_grad(self, modules: Dict[str, bool], requires_grad: bool):
-        for name, module in modules.items():
-            if module:
-                for param in getattr(self, name).parameters():
-                    param.requires_grad = requires_grad
+    def set_requires_grad(self, modules: Dict[str, bool]):
+        for name, requires_grad in modules.items():
+            for param in getattr(self, name).parameters():
+                param.requires_grad = requires_grad
 
     def freeze(self, core: bool = True, actor: bool = True, critic: bool = True):
-        self.set_requires_grad({'core': core, 'policy': actor, 'baseline': critic}, False)
+        self.set_requires_grad({'core': not core, 'policy': not actor, 'baseline': not critic})
 
     def unfreeze(self, core: bool = True, actor: bool = True, critic: bool = True):
-        self.set_requires_grad({'core': core, 'policy': actor, 'baseline': critic}, True)
+        self.set_requires_grad({'core': core, 'policy': actor, 'baseline': critic})
 
     def forward(self, inputs, core_state):
         T, B, C, H, W = inputs["screen_image"].shape
