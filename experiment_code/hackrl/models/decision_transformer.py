@@ -30,6 +30,7 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
         self.use_timesteps = flags.use_timesteps
         self.action_hidden_dim = flags.action_hidden_dim
         self.return_hidden_dim = flags.return_hidden_dim
+        self.hidden_dim = flags.hidden_dim
 
         self.n = 1 + self.use_actions * 1 + self.use_returns * 1
 
@@ -61,12 +62,13 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
         # note: the only difference between this GPT2Model and the default Huggingface version
         # is that the positional embeddings are removed (since we'll add those ourselves)
         self.core = GPT2Model(config)
-        self.core.hidden_size = self.hidden_dim
-        self.core.num_layers = flags.n_layer
 
         # self.embed_timestep = nn.Embedding(flags.env.max_episode_steps, self.hidden_dim)
         self.embed_timestep = nn.Linear(1, self.hidden_dim)
         self.embed_ln = nn.LayerNorm(self.hidden_dim)
+
+        self.policy = nn.Linear(self.hidden_dim, self.num_actions)
+        self.baseline = nn.Linear(self.hidden_dim, 1)
 
     def initial_state(self, batch_size=1):
         return dict(
