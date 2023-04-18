@@ -28,24 +28,26 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
         self.return_to_go = flags.return_to_go
         self.score_scale = flags.score_scale
         self.use_timesteps = flags.use_timesteps
-        self.action_hidden_dim = flags.action_hidden_dim
-        self.return_hidden_dim = flags.return_hidden_dim
+        self.hidden_dim = flags.hidden_dim
 
-        self.n = 1 + self.use_actions * 1 + self.use_returns * 1
+        self.n = 1 + self.use_prev_action * 1 + self.use_returns * 1
 
         self.h_dim = sum(
             [
                 self.topline_encoder.hidden_dim,
                 self.bottomline_encoder.hidden_dim,
                 self.screen_encoder.hidden_dim,
-                self.action_hidden_dim if self.use_prev_action else 0,
-                self.return_hidden_dim if self.use_returns else 0,
             ]
         )
 
-        self.return_encoder = nn.Linear(1, self.return_hidden_dim)
-        self.action_encoder = nn.Embedding(self.num_actions, self.action_hidden_dim)
-        self.embed_input = nn.Linear(self.h_dim, self.hidden_dim)
+        # self.embed_timestep = nn.Embedding(flags.env.max_episode_steps, self.hidden_dim)
+        self.embed_timestep = nn.Linear(1, self.hidden_dim)
+
+        self.embed_state = torch.nn.Linear(self.h_dim, self.hidden_dim)
+        self.embed_action = nn.Embedding(self.num_actions, self.hidden_dim)
+        self.embed_return = nn.Linear(1, self.hidden_dim)
+
+        self.embed_ln = nn.LayerNorm(self.hidden_dim)
 
         kwargs = dict(
             n_layer=flags.n_layer,
@@ -61,12 +63,9 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
         # note: the only difference between this GPT2Model and the default Huggingface version
         # is that the positional embeddings are removed (since we'll add those ourselves)
         self.core = GPT2Model(config)
-        self.core.hidden_size = self.hidden_dim
-        self.core.num_layers = flags.n_layer
 
-        # self.embed_timestep = nn.Embedding(flags.env.max_episode_steps, self.hidden_dim)
-        self.embed_timestep = nn.Linear(1, self.hidden_dim)
-        self.embed_ln = nn.LayerNorm(self.hidden_dim)
+        self.policy = nn.Linear(self.hidden_dim, self.num_actions)
+        self.baseline = nn.Linear(self.hidden_dim, 1)
 
     def initial_state(self, batch_size=1):
         return dict(
@@ -95,6 +94,35 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
 
         T, B, C, H, W = inputs["screen_image"].shape
 
+        # time embeddings
+        if self.use_timesteps:
+            timesteps = (
+                inputs["timesteps"].permute(1, 0).unsqueeze(-1)
+                / self.flags.env.max_episode_steps
+            )
+            time_embeddings = self.embed_timestep(timesteps)
+        else:
+            timesteps = (
+                torch.arange(T, device=inputs["mask"].device)
+                .view(1, -1, 1)
+                .repeat(B, 1, 1)
+                .float()
+            )
+            time_embeddings = self.embed_timestep(timesteps)
+
+        inputs_embeds = []
+
+        # return embeddings
+        if self.use_returns:
+            if self.return_to_go:
+                target_score = inputs["max_scores"] - inputs["scores"]
+            else:
+                target_score = inputs["max_scores"]
+            target_score = target_score.T.unsqueeze(-1) / self.score_scale
+            return_embeddings = self.embed_return(target_score) + time_embeddings
+            inputs_embeds.append(return_embeddings)
+
+        # state embeddings
         if self.use_tty_only:
             topline = inputs["tty_chars"][..., 0, :]
             bottom_line = inputs["tty_chars"][..., -2:, :]
@@ -122,46 +150,34 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
                 .reshape(T * B, C, H, W)
             ),
         ]
-        if self.use_prev_action:
-            st.append(self.action_encoder(inputs["prev_action"].T).reshape(T * B, -1))
-        if self.use_returns:
-            if self.return_to_go:
-                target_score = inputs["max_scores"] - inputs["scores"]
-            else:
-                target_score = inputs["max_scores"]
-            st.append(
-                self.return_encoder(
-                    target_score.T.reshape(T * B, -1) / self.score_scale
-                )
-            )
-
         st = torch.cat(st, dim=1)
-        core_input = st.view(B, T, -1)
-        inputs_embeds = self.embed_input(core_input)
+        state_input = st.view(B, T, -1)
+        state_embeddings = self.embed_state(state_input)
+        inputs_embeds.append(state_embeddings)
 
-        if self.use_timesteps:
-            timesteps = (
-                inputs["timesteps"].permute(1, 0).unsqueeze(-1)
-                / self.flags.env.max_episode_steps
-            )
-            time_embeddings = self.embed_timestep(timesteps)
-            inputs_embeds = inputs_embeds + time_embeddings
-        else:
-            timesteps = (
-                torch.arange(T, device=inputs["mask"].device)
-                .view(1, -1, 1)
-                .repeat(B, 1, 1)
-                .float()
-            )
-            time_embeddings = self.embed_timestep(timesteps)
-            inputs_embeds = inputs_embeds + time_embeddings
+        if self.use_prev_action:
+            actions = inputs["prev_action"].T.float().long()
+            action_embeddings = self.embed_action(actions) + time_embeddings
+            inputs_embeds.append(action_embeddings)
 
-        inputs_embeds = self.embed_ln(inputs_embeds)
+        # this makes the sequence look like (R_1, s_1, a_1, R_2, s_2, a_2, ...)
+        # which works nice in an autoregressive sense since states predict actions
+        stacked_inputs = (
+            torch.stack(inputs_embeds, dim=1)
+            .permute(0, 2, 1, 3)
+            .reshape(B, self.n * T, self.hidden_dim)
+        )
+        stacked_inputs = self.embed_ln(stacked_inputs)
 
         attention_mask = inputs["mask"].T
+        # to make the attention mask fit the stacked inputs, have to stack it as well
+        stacked_attention_mask = (
+            torch.stack((attention_mask,) * self.n, dim=1).permute(0, 2, 1).reshape(B, self.n * T)
+        )
+
         causal_mask = (
-            torch.tril(torch.ones((B, T, T), dtype=torch.uint8))
-            .view(B, 1, T, T)
+            torch.tril(torch.ones((B, T * self.n, T * self.n), dtype=torch.uint8))
+            .view(B, 1, T * self.n, T * self.n)
             .to(attention_mask.device)
         )
         if inputs["done"].any():
@@ -173,6 +189,7 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
             mask = torch.ones_like(causal_mask)
             xs, ys = torch.where(inputs["done"].T)
             for x, y in zip(xs, ys):
+                y = y * self.n
                 mask[x] = 0
                 mask[x, :, y:, y:] = 1
                 mask[x, :, :y, :y] = 1
@@ -184,12 +201,21 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
             causal_mask *= mask
 
         core_output = self.core(
-            inputs_embeds=inputs_embeds,
-            attention_mask=attention_mask,
+            inputs_embeds=stacked_inputs,
+            attention_mask=stacked_attention_mask,
             causal_mask=causal_mask,
         )
         x = core_output["last_hidden_state"]
 
+        # reshape x so that the second dimension corresponds to the original
+        # returns (0), states (1), or actions (2); i.e. x[:,1,t] is the token for s_t
+        x = x.reshape(B, T, self.n, self.hidden_dim).permute(0, 2, 1, 3)
+
+        # we want to look at every 3rd (nth) element, we predict action every (r, t, a) 
+        # and since we are passing prev_action not action we include last action from sequence
+        # thats why for all (r, s, a) we pass index 2 instead of 1
+        x = x[:, self.n - 1] # -1 because we index from 0
+        
         # we only want to predict the same number of actions as seq len of org_inputs
         x = x[:, -OT:]
 
@@ -215,6 +241,7 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
         )
 
         if self.use_inverse_model:
+            # TODO: pass the same input to inverse model as in ChaoticDwarven
             inverse_action_logits = self.inverse_model(core_input)
             output["encoded_state"] = core_input
             output["inverse_action_logits"] = inverse_action_logits
