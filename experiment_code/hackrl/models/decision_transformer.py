@@ -125,7 +125,12 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
             ),
         ]
         if self.use_prev_action:
-            st.append(self.action_encoder(inputs["prev_action"].T).reshape(T * B, -1))
+            actions = inputs["prev_action"].permute(1, 0).float().long()
+            st.append(
+                self.action_encoder(
+                    actions
+                ).reshape(T * B, -1)
+            )
         if self.use_returns:
             if self.return_to_go:
                 target_score = inputs["max_scores"] - inputs["scores"]
