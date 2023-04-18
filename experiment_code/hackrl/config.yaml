@@ -65,7 +65,7 @@ model: ChaoticDwarvenGPT5
 dropout: 0.1
 n_layer: 3
 n_head: 1
-hidden_dim: 128
+hidden_dim: 512
 
 normalize_advantages: True
 normalize_reward: False
