@@ -43,7 +43,7 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
         # self.embed_timestep = nn.Embedding(flags.env.max_episode_steps, self.hidden_dim)
         self.embed_timestep = nn.Linear(1, self.hidden_dim)
 
-        self.embed_state = torch.nn.Linear(self.h_dim, self.hidden_dim)
+        self.embed_state = nn.Linear(self.h_dim, self.hidden_dim)
         self.embed_action = nn.Embedding(self.num_actions, self.hidden_dim)
         self.embed_return = nn.Linear(1, self.hidden_dim)
 
@@ -152,7 +152,7 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
         ]
         st = torch.cat(st, dim=1)
         state_input = st.view(B, T, -1)
-        state_embeddings = self.embed_state(state_input)
+        state_embeddings = self.embed_state(state_input) + time_embeddings
         inputs_embeds.append(state_embeddings)
 
         if self.use_prev_action:
