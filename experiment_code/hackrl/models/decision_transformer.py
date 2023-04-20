@@ -123,8 +123,8 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
             bottom_line = inputs["blstats"]
             assert False, "TODO: topline shape transpose "
 
-        topline = topline.permute(1, 0, 2)
-        bottom_line = bottom_line.permute(1, 0, 2, 3)
+        # topline = topline.permute(1, 0, 2)
+        # bottom_line = bottom_line.permute(1, 0, 2, 3)
 
         st = [
             self.topline_encoder(
@@ -137,13 +137,14 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
             ),
             self.screen_encoder(
                 inputs["screen_image"]
-                .permute(1, 0, 2, 3, 4)
+                # .permute(1, 0, 2, 3, 4)
                 .float(memory_format=torch.contiguous_format)
                 .reshape(T * B, C, H, W)
             ),
         ]
         if self.use_prev_action:
-            actions = inputs["prev_action"].permute(1, 0).float().long()
+            # actions = inputs["prev_action"].permute(1, 0).float().long()
+            actions = inputs["prev_action"].float().long()
             st.append(
                 self.action_encoder(
                     actions
@@ -154,18 +155,19 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
                 target_score = inputs["max_scores"] - inputs["scores"]
             else:
                 target_score = inputs["max_scores"]
-            st.append(
-                self.return_encoder(
-                    target_score.T.reshape(T * B, -1) / self.score_scale
-                )
-            )
+            
+            # target_score = target_score.T.reshape(T * B, -1) / self.score_scale
+            target_score = target_score.reshape(T * B, -1) / self.score_scale
+            
+            st.append(self.return_encoder(target_score))
 
         st = torch.cat(st, dim=1)
-        core_input = st.view(B, T, -1)
+        core_input = st.view(T, B, -1)
         inputs_embeds = self.embed_input(core_input)
 
         if self.use_timesteps:
-            timesteps = inputs["timesteps"].permute(1, 0).unsqueeze(-1)
+            # timesteps = inputs["timesteps"].permute(1, 0).unsqueeze(-1)
+            timesteps = inputs["timesteps"].unsqueeze(-1)
             if self.linear_time_embeddings:
                 timesteps = timesteps.float() / self.flags.env.max_episode_steps
             else:
@@ -185,6 +187,7 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
         inputs_embeds = inputs_embeds + time_embeddings
 
         inputs_embeds = self.embed_ln(inputs_embeds)
+        inputs_embeds = inputs_embeds.permute(1, 0, 2)
 
         attention_mask = inputs["mask"].T
         causal_mask = (
