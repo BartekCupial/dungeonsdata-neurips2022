@@ -8,6 +8,7 @@ import numpy as np
 import omegaconf
 import torch
 import tqdm
+import wandb
 
 import hackrl.core
 import hackrl.environment
@@ -200,20 +201,39 @@ def parse_args(args=None):
     parser.add_argument("--num_actor_cpus", type=int, default=20)
     parser.add_argument("--num_actor_batches", type=int, default=2)
     parser.add_argument("--device", type=str, default="cuda")
-    parser.add_argument("--score_target", type=float)
+    parser.add_argument("--score_target", type=float, default=5000)
+    # wandb stuff
+    parser.add_argument("--wandb", type=bool, default=False)
+    parser.add_argument("--group", type=str, default="group2")
+    parser.add_argument("--exp_prefix", type=str, default="eval2")
     return parser.parse_known_args(args=args)[0]
 
 
-def main(
-    name: str, 
-    checkpoint_dir: Path, 
-    output_dir: Path, 
-    rollouts: int,
-    min_steps: int, 
-    device: str, 
-    **kwargs
-):
-    results = (name, checkpoint_dir, -1, -1, -1)
+def main(variant):
+    name = variant["name"]
+    checkpoint_dir = variant["checkpoint_dir"]
+    output_dir = variant["output_dir"]
+    rollouts = variant["rollouts"]
+    min_steps = variant["min_steps"]
+    device = variant["device"]
+    log_to_wandb = variant["wandb"]
+    kwargs = dict(
+        batch_size=variant["batch_size"],
+        num_actor_cpus=variant["num_actor_cpus"],
+        num_actor_batches=variant["num_actor_batches"],
+        score_target=variant["score_target"],
+    )
+
+    if log_to_wandb:
+        wandb.init(
+            project="nle",
+            config=variant,
+            group=variant["group"],
+            entity="gmum",
+            name=name,
+        )    
+
+    results = (name, checkpoint_dir, -1, -1, -1, -1)
 
     results = evaluate_folder( 
         name=name, 
@@ -224,6 +244,13 @@ def main(
         output_dir=output_dir,
         rollouts=rollouts,
         **kwargs
+    )
+
+    stats_values = dict(
+        len=results[2],
+        mean=results[3],
+        std=results[4],
+        median=results[5],
     )
 
     print(
@@ -239,7 +266,10 @@ def main(
             f.write(",".join(str(d) for d in data) + "\n")
     print("done")
 
+    if wandb:
+        wandb.log(stats_values)
+
 
 if __name__ == "__main__":
     args = vars(parse_args())
-    main(**args)
+    main(variant=vars(args))

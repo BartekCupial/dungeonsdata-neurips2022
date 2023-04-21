@@ -9,12 +9,14 @@ name = globals()["script"][:-3]
 config = {
     "exp_prefix": [name],
     "name": "eval_monk-AA-DT-40k-newembeds",
-    # "checkpoint_dir": "/home/bartek/Workspace/data/nethack_checkpoints/monk-AA-DT-40k-newembeds",
     "checkpoint_dir": "/checkpoint/hackrl/nle/monk-AA-DT-40k-newembeds",
-    "min_steps": 100000000,
+    "min_steps": 1_000_000_000,
     "output_dir": "DT_results",
-    "rollouts": 2048,
-    "batch_size": 512,
+    "num_actor_cpus": 40,
+    "num_actor_batches": 2,
+    "rollouts": 1024,
+    "batch_size": 256,
+    "wandb": True,
 }
 
 args = vars(parse_args())
