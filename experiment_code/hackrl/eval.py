@@ -177,7 +177,7 @@ def evaluate_folder(name, path, min_steps, device, pbar_idx, output_dir, **kwarg
             -1,
         )
     print(f"{pbar_idx} {name} Using: {p_ckpt}")
-    save_dir = output_dir / name
+    save_dir = Path(output_dir) / name
     save_dir.mkdir(parents=True, exist_ok=True)
     model, flags = load_model_and_flags(p_ckpt, device)
     returns = generate_envpool_rollouts(
