@@ -1027,12 +1027,12 @@ def main(cfg):
 
         if FLAGS.use_kickstarting:
             wandb.log({"debug/student_core_weight":model.student.core.weight_hh_l0.detach().cpu()[0,0] }, step=steps)
-            wandb.log({"debug/student_policy_weight":model.student.policy.weight.detach().cpu()[0,0] }, step=steps)
+            # wandb.log({"debug/student_policy_weight":model.student.policy.weight.detach().cpu()[0,0] }, step=steps)
             wandb.log({"debug/student_baseline_weight":model.student.baseline.weight.detach().cpu()[0,0] }, step=steps)
             wandb.log({"debug/teacher_core_weight":model.teacher.core.weight_hh_l0.detach().cpu()[0,0] }, step=steps)
-            wandb.log({"debug/teacher_policy_weight":model.teacher.policy.weight.detach().cpu()[0,0] }, step=steps)
-            wandb.log({"debug/teacher_baseline_weight":model.teacher.baseline.weight.detach().cpu()[0,0] }, step=steps)
-            wandb.log({"debug/bottomline_encoder_baseline_weight":model.student.bottomline_encoder.conv_net[0].weight.detach().cpu()[0,0,0] }, step=steps)
+            # wandb.log({"debug/teacher_policy_weight":model.teacher.policy.weight.detach().cpu()[0,0] }, step=steps)
+            # wandb.log({"debug/teacher_baseline_weight":model.teacher.baseline.weight.detach().cpu()[0,0] }, step=steps)
+            # wandb.log({"debug/bottomline_encoder_baseline_weight":model.student.bottomline_encoder.conv_net[0].weight.detach().cpu()[0,0,0] }, step=steps)
         else:
             wandb.log({"debug/core_weight":model.core.weight_hh_l0.detach().cpu()[0,0] }, step=steps)
             wandb.log({"debug/policy_weight":model.policy.weight.detach().cpu()[0,0] }, step=steps)
