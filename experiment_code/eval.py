@@ -33,7 +33,7 @@ def load_model_and_flags(path, device):
     return model, flags
 
 
-def generate_envpool_rollouts(model, rollouts, flags, pbar_idx=0):
+def generate_envpool_rollouts(model, rollouts, flags, pbar_idx=0, score_target=10000):
     global ENVS
     # NB: We do NOT want to generate the first N rollouts from B batch
     # of envs since this will bias short episodes.
@@ -68,6 +68,12 @@ def generate_envpool_rollouts(model, rollouts, flags, pbar_idx=0):
             rollouts,
         )
     ).to(device)
+    timesteps = torch.zeros(
+        (
+            num_batches,
+            rollouts,
+        )
+    ).to(device)
 
     returns = []
     results = [None, None]
@@ -95,6 +101,11 @@ def generate_envpool_rollouts(model, rollouts, flags, pbar_idx=0):
             env_outputs["prev_action"] = action[i]
             current_reward += env_outputs["reward"]
 
+            env_outputs["timesteps"] = timesteps[i]
+            env_outputs["max_scores"] = (torch.ones_like(env_outputs["timesteps"]) * score_target).float()
+            env_outputs["mask"] = torch.ones_like(env_outputs["timesteps"]).to(torch.bool)
+            env_outputs["scores"] = current_reward[i]
+
             done_and_valid = env_outputs["done"].int() * rollouts_left[i].bool().int()
             finished = torch.sum(done_and_valid).item()
             totals -= finished
@@ -104,6 +115,8 @@ def generate_envpool_rollouts(model, rollouts, flags, pbar_idx=0):
                 returns.append(current_reward[i][j[0]].item())
 
             current_reward[i] *= 1 - env_outputs["done"].int()
+            timesteps[i] += 1
+            timesteps[i] *= 1 - env_outputs["done"].int()
             rollouts_left[i] -= done_and_valid
             if finished:
                 pbar.update(finished)
@@ -136,13 +149,13 @@ def find_checkpoint(path, min_steps, device):
         ]
         if v > desired_v or v > 122070.325 or (path in allowed_paths and v > 18000):
             return f"{path}/checkpoint_v{v}.tar"
-    return f"{path}/checkpoint_v{v}.tar"
+    # return f"{path}/checkpoint_v{v}.tar"
 
     print("Returning checkpoint.tar")
     return f"{path}/checkpoint.tar"
 
 
-def evaluate_folder(name, path, min_steps, device, rollouts, pbar_idx):
+def evaluate_folder(name, path, min_steps, device, rollouts, pbar_idx, score_target):
     p_ckpt = find_checkpoint(path, min_steps, device)
     if not p_ckpt:
         print(f"Not yet: {name} - {path}")
@@ -157,20 +170,20 @@ def evaluate_folder(name, path, min_steps, device, rollouts, pbar_idx):
     print(f"{pbar_idx} {name} Using: {p_ckpt}")
     os.makedirs(f"{DIR}/{NAME}/", exist_ok=True)
     model, flags = load_model_and_flags(p_ckpt, device)
-    returns = generate_envpool_rollouts(model, rollouts, flags, pbar_idx)
+    returns = generate_envpool_rollouts(model, rollouts, flags, pbar_idx, score_target)
     return (name, p_ckpt) + returns
 
 
 if __name__ == "__main__":
     DIR = "results_txt"
-    NAME, PATH = sys.argv[1], sys.argv[2]
+    NAME, PATH, SCORE_TARGET = sys.argv[1], sys.argv[2], sys.argv[3]
     DEVICE = sys.argv[3] if len(sys.argv) == 4 else "cuda:0"
     print(f"Running {NAME} - {PATH} on {DEVICE}")
     MIN_STEPS = 1_000_000_000
     ROLLOUTS = 1024
 
     results = (NAME, PATH, -1, -1, -1)
-    results = evaluate_folder(NAME, PATH, MIN_STEPS, DEVICE, ROLLOUTS, 0)
+    results = evaluate_folder(NAME, PATH, MIN_STEPS, DEVICE, ROLLOUTS, 0, SCORE_TARGET)
     print(
         f"{results[0]} Done {results[1]}  Mean {results[3]} ± {results[4]}  | Median {results[5]}"
     )
