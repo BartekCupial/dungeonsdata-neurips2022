@@ -164,15 +164,15 @@ class Attention(nn.Module):
         w = torch.matmul(q, k)
         if self.scale:
             w = w / (float(v.size(-1)) ** 0.5)
-        nd, ns = w.size(-2), w.size(-1)
+        # nd, ns = w.size(-2), w.size(-1)
 
-        if not self.is_cross_attention:
-            # if only "normal" attention layer implements causal mask
-            mask = self.bias[:, :, ns - nd : ns, :ns]
-            w = torch.where(mask.bool(), w, self.masked_bias.to(w.dtype))
+        # if not self.is_cross_attention:
+        #     # if only "normal" attention layer implements causal mask
+        #     mask = self.bias[:, :, ns - nd : ns, :ns]
+        #     w = torch.where(mask.bool(), w, self.masked_bias.to(w.dtype))
 
-        if causal_mask is not None:
-            w = torch.where(causal_mask.bool(), w, self.masked_bias.to(w.dtype))
+        # if causal_mask is not None:
+        w = torch.where(causal_mask.bool(), w, self.masked_bias.to(w.dtype))
 
         if attention_mask is not None:
             # Apply the attention mask

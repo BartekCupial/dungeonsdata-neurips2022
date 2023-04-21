@@ -38,15 +38,9 @@ config = {
 # params different between exps
 params_grid = [
     {
-        "hidden_dim": [1024],
-        "weight_decay": [0.01],
-        "warmup_steps": [4000],
-    },
-    {
-        "n_layer": [6],
-        "n_head": [8],
-        "weight_decay": [0.01],
-        "warmup_steps": [4000],
+        "ttyrec_unroll_length": [32],
+        "unroll_length": [32],
+        "ttyrec_batch_size": [256],
     },
 ]
 
