@@ -130,6 +130,7 @@ class Attention(nn.Module):
         self.register_buffer("bias", torch.tril(torch.ones((n_ctx, n_ctx), dtype=torch.uint8)).view(1, 1, n_ctx, n_ctx))
         self.register_buffer("masked_bias", torch.tensor(-1e4))
         self.n_head = config.n_head
+        self.max_length = config.max_length
         self.split_size = n_state
         self.scale = scale
         self.is_cross_attention = is_cross_attention
@@ -161,23 +162,30 @@ class Attention(nn.Module):
         self.pruned_heads = self.pruned_heads.union(heads)
 
     def _attn(self, q, k, v, attention_mask=None, head_mask=None, causal_mask=None, output_attentions=False):
-        w = torch.matmul(q, k)
+        k1 = k[:, :, :, (self.max_length - 1):]
+        v1 = v[:, :, (self.max_length - 1):, :]
+        w = torch.matmul(q, k1)
         if self.scale:
-            w = w / (float(v.size(-1)) ** 0.5)
-        # nd, ns = w.size(-2), w.size(-1)
+            w = w / (float(v1.size(-1)) ** 0.5)
+        nd, ns = w.size(-2), w.size(-1)
+        # we permute w to apply masks
+        w = w.permute(0, 1, 3, 2)
 
-        # if not self.is_cross_attention:
-        #     # if only "normal" attention layer implements causal mask
-        #     mask = self.bias[:, :, ns - nd : ns, :ns]
-        #     w = torch.where(mask.bool(), w, self.masked_bias.to(w.dtype))
+        if not self.is_cross_attention:
+            # apply attention so each prediction will use max_length of tokens
+            mask = self.bias[:, :, nd-ns:nd, :nd]
+            # unmask longer parts
+            mask[:, :, :ns, :ns] *= torch.logical_not(self.bias[:, :, :ns, :ns]) + torch.eye(ns, ns).to(self.bias.device).to(self.bias.dtype)
+            w = torch.where(mask.bool(), w, self.masked_bias.to(w.dtype))
 
-        # if causal_mask is not None:
-        w = torch.where(causal_mask.bool(), w, self.masked_bias.to(w.dtype))
+        if causal_mask is not None:
+            w = torch.where(causal_mask.bool(), w, self.masked_bias.to(w.dtype))
 
         if attention_mask is not None:
             # Apply the attention mask
             w = w + attention_mask
 
+        w = w.permute(0, 1, 3, 2)
         w = nn.Softmax(dim=-1)(w)
         w = self.attn_dropout(w)
 
@@ -185,7 +193,7 @@ class Attention(nn.Module):
         if head_mask is not None:
             w = w * head_mask
 
-        outputs = [torch.matmul(w, v)]
+        outputs = [torch.matmul(w, v1)]
         if output_attentions:
             outputs.append(w)
         return outputs

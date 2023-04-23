@@ -48,6 +48,7 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
         self.embed_input = nn.Linear(self.h_dim, self.hidden_dim)
 
         kwargs = dict(
+            max_length = self.max_length,
             n_layer=flags.n_layer,
             n_head=flags.n_head,
             n_inner=4 * self.hidden_dim,
@@ -197,29 +198,32 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
         #     .view(B, 1, T, T)
         #     .to(attention_mask.device)
         # )
-        if self.max_length < T:
-            # we want model to predict next token using full context
-            # instead of causal attention (left) we pass to the model 
-            # more models and unmask some elements (center), after prediction
-            # (right) we will only use elements with full context, 
-            # TODO: can be achieved with different attention
-            #        1000     1000000     1111000     
-            #        1100     1100000     0111100
-            #        1110     1110000     0011110
-            #        1111     1111000     0001111
-            #                 0111100
-            #                 0011110
-            #                 0001111
-            causal_mask = torch.tril(torch.ones(T, T))
-            causal_mask[OT-1:, :OT] *= torch.logical_not(torch.tril(torch.ones(OT, OT))) + torch.eye(OT, OT)
-            assert (causal_mask[OT-1:].sum(dim=1) == OT).all()
-            causal_mask = causal_mask.reshape(1, 1, T, T).repeat(B, 1, 1, 1).to(attention_mask.device)
-        else:
-            causal_mask = (
-                torch.tril(torch.ones((B, T, T), dtype=torch.uint8))
-                .view(B, 1, T, T)
-                .to(attention_mask.device)
-            )
+        # if self.max_length < T:
+        #     # we want model to predict next token using full context
+        #     # instead of causal attention (left) we pass to the model 
+        #     # more models and unmask some elements (center), after prediction
+        #     # (right) we will only use elements with full context, 
+        #     # TODO: can be achieved with different attention
+        #     #        1000     1000000     1111000     
+        #     #        1100     1100000     0111100
+        #     #        1110     1110000     0011110
+        #     #        1111     1111000     0001111
+        #     #                 0111100
+        #     #                 0011110
+        #     #                 0001111
+        #     causal_mask = torch.tril(torch.ones(T, T))
+        #     causal_mask[OT-1:, :OT] *= torch.logical_not(torch.tril(torch.ones(OT, OT))) + torch.eye(OT, OT)
+        #     assert (causal_mask[OT-1:].sum(dim=1) == OT).all()
+        #     causal_mask = causal_mask.reshape(1, 1, T, T).repeat(B, 1, 1, 1).to(attention_mask.device)
+        # else:
+        #     causal_mask = (
+        #         torch.tril(torch.ones((B, T, T), dtype=torch.uint8))
+        #         .view(B, 1, T, T)
+        #         .to(attention_mask.device)
+        #     )
+        causal_mask = torch.tril(torch.ones(T, T))
+        causal_mask = causal_mask[T-OT:T, :T]
+        causal_mask = causal_mask.unsqueeze(0).unsqueeze(0).repeat(B, 1, 1, 1).to(attention_mask.device)
         if inputs["done"].any():
             # # for breakpoint
             # if "actions_converted" in org_inputs:
