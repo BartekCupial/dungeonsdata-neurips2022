@@ -198,9 +198,21 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
         #     .to(attention_mask.device)
         # )
         if self.max_length < T:
-            causal_mask = torch.ones(T, T)
-            causal_mask[:OT, OT - 1:] *= torch.tril(torch.ones(OT, OT))
-            causal_mask[OT:, :OT - 1] *= torch.logical_not(torch.tril(torch.ones(OT - 1, OT - 1)))
+            # we want model to predict next token using full context
+            # instead of causal attention (left) we pass to the model 
+            # more models and unmask some elements (center), after prediction
+            # (right) we will only use elements with full context, 
+            # TODO: can be achieved with different attention
+            #        1000     1000000     1111000     
+            #        1100     1100000     0111100
+            #        1110     1110000     0011110
+            #        1111     1111000     0001111
+            #                 0111100
+            #                 0011110
+            #                 0001111
+            causal_mask = torch.tril(torch.ones(T, T))
+            causal_mask[OT-1:, :OT] *= torch.logical_not(torch.tril(torch.ones(OT, OT))) + torch.eye(OT, OT)
+            assert (causal_mask[OT-1:].sum(dim=1) == OT).all()
             causal_mask = causal_mask.reshape(1, 1, T, T).repeat(B, 1, 1, 1).to(attention_mask.device)
         else:
             causal_mask = (
