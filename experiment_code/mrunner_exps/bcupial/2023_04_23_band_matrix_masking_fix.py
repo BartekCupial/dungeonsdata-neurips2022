@@ -19,10 +19,10 @@ config = {
     "supervised_loss": 1,
     "adam_learning_rate": 0.001,
     "behavioural_clone": True,
-    'group': "monk-AA-DT",
+    'group': name,
     "character": "mon-hum-neu-mal",
     "model": "DecisionTransformer",
-    "return_to_go": False, # TODO: test
+    "return_to_go": True,
     "use_timesteps": True,
     "use_returns": True,
     "use_timesteps": True,
@@ -38,10 +38,13 @@ config = {
 # params different between exps
 params_grid = [
     {
-        "ttyrec_unroll_length": [32],
-        "unroll_length": [32],
-        "ttyrec_batch_size": [256],
-    },
+        "ttyrec_unroll_length": [unroll],
+        "unroll_length": [unroll],
+        "ttyrec_batch_size": [256, 256],
+        "warmup_steps": [10000],
+        "group": [f"{name}_{i}"],
+    }
+    for i, unroll  in enumerate([24, 32, 48])
 ]
 
 experiments_list = create_experiments_helper(
