@@ -47,8 +47,10 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
         self.action_encoder = nn.Embedding(self.num_actions, self.action_hidden_dim)
         self.embed_input = nn.Linear(self.h_dim, self.hidden_dim)
 
+        M = self.max_length * 2
+        self.register_buffer("tril", torch.tril(torch.ones(M, M, dtype=torch.uint8)).view(1, 1, M, M))
+        self.register_buffer("eye", torch.eye(M, M, dtype=torch.uint8).view(1, 1, M, M))
         kwargs = dict(
-            max_length = self.max_length,
             n_layer=flags.n_layer,
             n_head=flags.n_head,
             n_inner=4 * self.hidden_dim,
@@ -56,7 +58,6 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
             resid_pdrop=flags.dropout,
             attn_pdrop=flags.dropout,
         )
-
         config = transformers.GPT2Config(vocab_size=1, n_embd=self.hidden_dim, **kwargs)
 
         # note: the only difference between this GPT2Model and the default Huggingface version
@@ -193,41 +194,26 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
         inputs_embeds = self.embed_ln(inputs_embeds)
 
         attention_mask = inputs["mask"].T
-        # causal_mask = (
-        #     torch.tril(torch.ones((B, T, T), dtype=torch.uint8))
-        #     .view(B, 1, T, T)
-        #     .to(attention_mask.device)
-        # )
-        # if self.max_length < T:
-        #     # we want model to predict next token using full context
-        #     # instead of causal attention (left) we pass to the model 
-        #     # more models and unmask some elements (center), after prediction
-        #     # (right) we will only use elements with full context, 
-        #     # TODO: can be achieved with different attention
-        #     #        1000     1000000     1111000     
-        #     #        1100     1100000     0111100
-        #     #        1110     1110000     0011110
-        #     #        1111     1111000     0001111
-        #     #                 0111100
-        #     #                 0011110
-        #     #                 0001111
-        #     causal_mask = torch.tril(torch.ones(T, T))
-        #     causal_mask[OT-1:, :OT] *= torch.logical_not(torch.tril(torch.ones(OT, OT))) + torch.eye(OT, OT)
-        #     assert (causal_mask[OT-1:].sum(dim=1) == OT).all()
-        #     causal_mask = causal_mask.reshape(1, 1, T, T).repeat(B, 1, 1, 1).to(attention_mask.device)
-        # else:
-        #     causal_mask = (
-        #         torch.tril(torch.ones((B, T, T), dtype=torch.uint8))
-        #         .view(B, 1, T, T)
-        #         .to(attention_mask.device)
-        #     )
-        causal_mask = torch.tril(torch.ones(T, T))
-        causal_mask = causal_mask[T-OT:T, :T]
-        causal_mask = causal_mask.unsqueeze(0).unsqueeze(0).repeat(B, 1, 1, 1).to(attention_mask.device)
+        # we want model to predict next token using full context
+        # instead of causal attention (left) we pass to the model 
+        # more models and unmask some elements (center), after prediction
+        # (right) we will only use elements with full context, 
+        #        1000     1000000     1111000     
+        #        1100     1100000     0111100
+        #        1110     1110000     0011110
+        #        1111     1111000     0001111
+        #                 0111100
+        #                 0011110
+        #                 0001111
+        M = self.max_length
+        causal_mask = self.tril[:, :, :T, :T]
+        causal_mask[:, :, M - 1:, :OT] *= torch.logical_not(self.tril[:, :, :OT, :OT]) + self.eye[:, :, :OT, :OT]
+        assert (causal_mask[:, :, M - 1:].sum(dim=3) == M).all()
+        causal_mask = causal_mask.repeat(B, 1, 1, 1)
         if inputs["done"].any():
             # # for breakpoint
             # if "actions_converted" in org_inputs:
-            #     print("breakpoint")
+            #     print("episode finished")
 
             # modify causal mask, to prevent attending to states between games
             mask = torch.ones_like(causal_mask)
