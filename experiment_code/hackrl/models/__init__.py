@@ -73,6 +73,23 @@ def create_model(flags, device):
     model.to(device=device)
 
     initialize_weights(flags, model)
+
+    if flags['use_checkpoint_actor']:
+
+        def distil_actor_nad_core(load_data):
+            return {
+                key: elem
+                for key, elem in load_data["learner_state"]["model"].items()
+                if "baseline" not in key
+            }
+
+        load_data = torch.load(
+            flags["model_checkpoint_path"],
+            map_location=torch.device(device),
+        )
+        model.load_state_dict(distil_actor_nad_core(load_data), strict=False)
+        model.freeze(core=True, actor=True, critic=False)
+
     return model
 
 

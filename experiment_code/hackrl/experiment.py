@@ -1022,10 +1022,15 @@ def main(cfg):
         now = time.time()
 
         steps = learner_state.global_stats["env_train_steps"].result()
+        if steps > FLAGS.unfreeze_actor_steps:
+            model.unfreeze(core=True, actor=True, critic=True)
         if steps >= FLAGS.total_steps:
             logging.info("Stopping training after %i steps", steps)
             break
 
+        wandb.log({"debug/core_weight":model.core.weight_hh_l0.detach().cpu()[0,0] }, step=steps)
+        wandb.log({"debug/policy_weight":model.policy.weight.detach().cpu()[0,0] }, step=steps)
+        wandb.log({"debug/baseline_weight":model.baseline.weight.detach().cpu()[0,0] }, step=steps)
         rpc_group.update()
         accumulator.update()
         if accumulator.wants_state():

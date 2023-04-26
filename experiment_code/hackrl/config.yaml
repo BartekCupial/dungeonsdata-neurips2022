@@ -131,3 +131,7 @@ ttyrec_batch_size: 512
 ttyrec_unroll_length: 32
 ttyrec_envpool_size: 4
 ttyrec_cpus: 10 
+
+use_checkpoint_actor: True
+model_checkpoint_path:  /net/people/plgrid/plgmostaszewski/dungeonsdata-neurips2022/experiment_code/monk-AA-BC/checkpoint.tar
+unfreeze_actor_steps: 10_000_000

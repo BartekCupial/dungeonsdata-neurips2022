@@ -2,7 +2,7 @@ from pathlib import Path
 
 from mrunner.helpers.specification_helper import create_experiments_helper
 
-
+# take configuration name without .py extension
 name = globals()["script"][:-3]
 
 # params for all exps
@@ -14,8 +14,8 @@ config = {
     "total_steps": 2_000_000_000,
     'group': "monk-APPO",
     "character": "mon-hum-neu-mal",
+    "use_checkpoint_actor": False
 }
-
 
 # params different between exps
 params_grid = {}
@@ -30,4 +30,5 @@ experiments_list = create_experiments_helper(
     exclude=["checkpoint"],
     base_config=config,
     params_grid=params_grid,
+    exclude_git_files=False,
 )
