@@ -871,6 +871,9 @@ def main(cfg):
         student = hackrl.models.create_model(FLAGS, FLAGS.device)
         load_data = torch.load(FLAGS.kickstarting_path)
         t_flags = omegaconf.OmegaConf.create(load_data["flags"])
+        if FLAGS['use_checkpoint_actor']:
+            t_flags.use_checkpoint_actor = True
+            t_flags.model_checkpoint_path = FLAGS["model_checkpoint_path"]
         teacher = hackrl.models.create_model(t_flags, FLAGS.device)
         teacher.load_state_dict(load_data["learner_state"]["model"])
         model = hackrl.models.KickStarter(
@@ -1023,14 +1026,26 @@ def main(cfg):
 
         steps = learner_state.global_stats["env_train_steps"].result()
         if steps > FLAGS.unfreeze_actor_steps:
-            model.unfreeze(core=True, actor=True, critic=True)
+            if FLAGS.use_kickstarting:
+                model.student.unfreeze(core=True, actor=True, critic=True)
+            else:
+                model.unfreeze(core=True, actor=True, critic=True)
         if steps >= FLAGS.total_steps:
             logging.info("Stopping training after %i steps", steps)
             break
 
-        wandb.log({"debug/core_weight":model.core.weight_hh_l0.detach().cpu()[0,0] }, step=steps)
-        wandb.log({"debug/policy_weight":model.policy.weight.detach().cpu()[0,0] }, step=steps)
-        wandb.log({"debug/baseline_weight":model.baseline.weight.detach().cpu()[0,0] }, step=steps)
+        if FLAGS.use_kickstarting:
+            wandb.log({"debug/student_core_weight":model.student.core.weight_hh_l0.detach().cpu()[0,0] }, step=steps)
+            wandb.log({"debug/student_policy_weight":model.student.policy.weight.detach().cpu()[0,0] }, step=steps)
+            wandb.log({"debug/student_policy_weight":model.student.policy.weight.detach().cpu()[0,0] }, step=steps)
+            wandb.log({"debug/student_baseline_weight":model.student.baseline.weight.detach().cpu()[0,0] }, step=steps)
+            wandb.log({"debug/teacher_core_weight":model.teacher.core.weight_hh_l0.detach().cpu()[0,0] }, step=steps)
+            wandb.log({"debug/teacher_policy_weight":model.teacher.policy.weight.detach().cpu()[0,0] }, step=steps)
+            wandb.log({"debug/teacher_baseline_weight":model.teacher.baseline.weight.detach().cpu()[0,0] }, step=steps)
+        else:
+            wandb.log({"debug/core_weight":model.core.weight_hh_l0.detach().cpu()[0,0] }, step=steps)
+            wandb.log({"debug/policy_weight":model.policy.weight.detach().cpu()[0,0] }, step=steps)
+            wandb.log({"debug/baseline_weight":model.baseline.weight.detach().cpu()[0,0] }, step=steps)
         rpc_group.update()
         accumulator.update()
         if accumulator.wants_state():
