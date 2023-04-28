@@ -134,6 +134,5 @@ ttyrec_envpool_size: 4
 ttyrec_cpus: 10 
 
 use_checkpoint_actor: False
-modules_to_freeze: ["topline_encoder", "bottomline_encoder", "screen_encoder", "core","policy"]
 model_checkpoint_path:  /path/checkpoint.tar
 unfreeze_actor_steps: 0

@@ -871,10 +871,10 @@ def main(cfg):
         student = hackrl.models.create_model(FLAGS, FLAGS.device)
         load_data = torch.load(FLAGS.kickstarting_path)
         t_flags = omegaconf.OmegaConf.create(load_data["flags"])
-        if FLAGS['use_checkpoint_actor']:
-            t_flags.use_checkpoint_actor = True
-            t_flags.model_checkpoint_path = FLAGS["model_checkpoint_path"]
-            t_flags.modules_to_freeze = FLAGS["modules_to_freeze"]
+       
+        t_flags.use_checkpoint_actor = FLAGS['use_checkpoint_actor']
+        t_flags.model_checkpoint_path = FLAGS["model_checkpoint_path"]
+        
         teacher = hackrl.models.create_model(t_flags, FLAGS.device)
         teacher.load_state_dict(load_data["learner_state"]["model"])
         model = hackrl.models.KickStarter(
@@ -1021,16 +1021,18 @@ def main(cfg):
     last_reduce_stats = now
     is_leader = False
     is_connected = False
+    unfreezed = False
     while not terminate:
         prev_now = now
         now = time.time()
 
         steps = learner_state.global_stats["env_train_steps"].result()
-        if steps > FLAGS.unfreeze_actor_steps:
+        unfreezed = True
+        if not unfreezed and steps > FLAGS.unfreeze_actor_steps:
             if FLAGS.use_kickstarting:
-                hackrl.models.unfreeze_selected(model.student,FLAGS.modules_to_freeze)
+                hackrl.models.unfreeze(model.student)
             else:
-                hackrl.models.unfreeze_selected(model, FLAGS.modules_to_freeze)
+                hackrl.models.unfreeze(model)
         if steps >= FLAGS.total_steps:
             logging.info("Stopping training after %i steps", steps)
             break
