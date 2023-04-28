@@ -7,6 +7,7 @@ name = globals()["script"][:-3]
 
 # params for all exps
 config = {
+    "exp_tags": [name],
     "connect":"0.0.0.0:4431",
     "exp_set": "2G",
     "exp_point": "monk-APPO-AA-KS",
@@ -16,13 +17,19 @@ config = {
     "kickstarting_loss": 0.1,
     "group": "monk-APPO-AA-KS",
     "use_kickstarting": True, 
-    "kickstarting_path": "/path/to/checkpoint.tar",
+    "kickstarting_path": "/net/tscratch/people/plgmostaszewski/dungeonsdata-neurips2022/experiment_code/monk-AA-BC/checkpoint.tar",
     "character": "mon-hum-neu-mal",
+    "use_checkpoint_actor": False
 }
-
-
+                    
 # params different between exps
-params_grid = {}
+params_grid = [
+    {
+    "seed":[i],
+    "group": [f"{name}_s{i}"],
+    }   
+for i in range(3)
+]
 
 experiments_list = create_experiments_helper(
     experiment_name=name,

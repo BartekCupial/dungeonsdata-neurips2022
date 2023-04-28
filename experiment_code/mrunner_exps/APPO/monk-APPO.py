@@ -7,6 +7,7 @@ name = globals()["script"][:-3]
 
 # params for all exps
 config = {
+    "exp_tags": [name],
     "connect":"0.0.0.0:4431",
     "exp_set": "2G",
     "exp_point": "monk-APPO",
@@ -19,7 +20,13 @@ config = {
 
 # params different between exps
 params_grid = {}
-
+params_grid = [
+    {
+    "seed":[i],
+    "group": [f"{name}_s{i}"],
+    }   
+for i in range(3)
+]
 experiments_list = create_experiments_helper(
     experiment_name=name,
     project_name="nle",

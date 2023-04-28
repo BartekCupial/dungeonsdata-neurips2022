@@ -88,7 +88,7 @@ def create_model(flags, device):
             map_location=torch.device(device),
         )
         model.load_state_dict(distil_actor_nad_core(load_data), strict=False)
-        model.freeze(core=True, actor=True, critic=False)
+        freeze_selected(model, flags['modules_to_freeze'])
 
     return model
 
@@ -100,3 +100,24 @@ def load_model(load_dir, device):
     checkpoint_states = torch.load(flags.checkpoint, map_location=device)
     model.load_state_dict(checkpoint_states["model_state_dict"])
     return model
+
+def freeze(model):
+    for param in model.parameters():
+        param.requires_grad = False
+
+
+def unfreeze(model):
+    for param in model.parameters():
+        param.requires_grad = True
+
+
+def freeze_selected(model, modules):
+    for module_name in modules.items():
+        for param in getattr(model, module_name).parameters():
+            param.requires_grad = False
+
+
+def unfreeze_selected(model, modules):
+    for module_name in modules.items():
+        for param in getattr(model, module_name).parameters():
+            param.requires_grad = True
