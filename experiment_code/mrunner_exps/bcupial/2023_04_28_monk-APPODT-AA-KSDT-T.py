@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from mrunner.helpers.specification_helper import create_experiments_helper, get_combinations
+from random_word import RandomWords
 
 
 name = globals()["script"][:-3]
@@ -52,7 +53,7 @@ params_grid = [
         "batch_size": [bs],
         "virtual_batch_size": [bs * n_gpus],
         "unfreeze_actor_steps": [0, 10_000_000],
-        "seed": [0], # reduced number of seeds
+        "seed": [0, 1], # reduced number of seeds
     },
 ]
 
@@ -61,7 +62,8 @@ params_configurations = get_combinations(params_grid)
 final_grid = []
 for e, cfg in enumerate(params_configurations):
     cfg = {key: [value] for key, value in cfg.items()}
-    cfg["group"] = [f"{name}_{e}"]
+    r = RandomWords().get_random_word()
+    cfg["group"] = [f"{name}_{e}_{r}"]
     final_grid.append(dict(cfg))
 
 
