@@ -4,8 +4,8 @@ from mrunner.helpers.specification_helper import create_experiments_helper, get_
 from random_word import RandomWords
 
 
-# name = globals()["script"][:-3]
-name = "local"
+name = globals()["script"][:-3]
+
 # params for all exps
 config = {
     "exp_tags": [name],
