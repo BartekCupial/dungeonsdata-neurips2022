@@ -38,18 +38,18 @@ config = {
 }
 
 
-n_gpus = 8
+n_gpus = 4
 bs = 128 # batch size RL agent
 
 # params different between exps
 params_grid = [
     {
-        "num_actor_cpus": [16],
+        "num_actor_cpus": [20],
         "actor_batch_size": [bs * 2],
         "batch_size": [bs],
         "virtual_batch_size": [bs * n_gpus],
         "unfreeze_actor_steps": [0, 10_000_000],
-        "seed": [0, 1], # reduced number of seeds
+        "seed": [3], # reduced number of seeds
     },
 ]
 

@@ -52,7 +52,15 @@ params_grid = [
         "virtual_batch_size": [128 * n_gpus],
         "unfreeze_actor_steps": [0, 10_000_000],
         "seed": [0], # reduced number of seeds
-        "use_checkpoint_actor": [True, False]
+        "use_checkpoint_actor": [True]
+    },
+    {
+        "num_actor_cpus": [16],
+        "actor_batch_size": [bs * 2],
+        "batch_size": [bs],
+        "virtual_batch_size": [128 * n_gpus],
+        "seed": [0], # reduced number of seeds
+        "use_checkpoint_actor": [False]
     },
 ]
 
