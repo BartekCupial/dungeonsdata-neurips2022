@@ -104,7 +104,7 @@ baseline:
 run_teacher_hs: False
 use_kickstarting: False
 kickstarting_loss: 1.0
-kickstarting_path: /checkpoint/ehambro/20220519/carmine-woodpecker/checkpoint_v102229.tar
+kickstarting_path: /net/pr2/projects/plgrid/plgggmum_crl/bcupial/monk-AA-BC/checkpoint.tar
 
 use_tty_only: true  # Use only tty observations. 'False' ~ 10% faster & higher score
 use_prev_action: true
