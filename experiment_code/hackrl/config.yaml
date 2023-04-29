@@ -134,5 +134,5 @@ ttyrec_envpool_size: 4
 ttyrec_cpus: 10 
 
 use_checkpoint_actor: False
-model_checkpoint_path:  /path/checkpoint.tar
+model_checkpoint_path: /checkpoint/checkpoint.tar
 unfreeze_actor_steps: 0

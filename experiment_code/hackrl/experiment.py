@@ -1027,12 +1027,13 @@ def main(cfg):
         now = time.time()
 
         steps = learner_state.global_stats["env_train_steps"].result()
-        unfreezed = True
         if not unfreezed and steps > FLAGS.unfreeze_actor_steps:
             if FLAGS.use_kickstarting:
                 hackrl.models.unfreeze(model.student)
             else:
                 hackrl.models.unfreeze(model)
+            unfreezed = True
+
         if steps >= FLAGS.total_steps:
             logging.info("Stopping training after %i steps", steps)
             break
