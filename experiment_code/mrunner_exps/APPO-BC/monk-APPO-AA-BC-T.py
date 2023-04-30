@@ -10,23 +10,24 @@ config = {
     "exp_tags": [name],
     "connect":"0.0.0.0:4431",
     "exp_set": "2G",
-    "exp_point": "monk-APPO-AA-KS",
+    "exp_point": "monk-APPO-AA-BC",
     "num_actor_cpus": 20,
     "total_steps": 2_000_000_000,
     "ttyrec_batch_size": 256,
-    "kickstarting_loss": 0.1,
-    "group": "monk-APPO-AA-KS",
-    "use_kickstarting": True, 
-    "kickstarting_path": "/net/tscratch/people/plgmostaszewski/dungeonsdata-neurips2022/experiment_code/monk-AA-BC/checkpoint.tar",
+    "supervised_loss": 0.1,
+    'group': "monk-APPO-AA-BC",
     "character": "mon-hum-neu-mal",
-    "use_checkpoint_actor": False
+    "use_checkpoint_actor": False,
 }
-                    
+
+
 # params different between exps
 params_grid = [
     {
         "seed": [0, 1, 2],
         "unfreeze_actor_steps": [0, 10_000_000],
+        "use_checkpoint_actor": [True],
+        "model_checkpoint_path": ["/checkpoint/hackrl/nle/monk-AA-BC_1/checkpoint.tar"],
     },
 ]
 

@@ -91,7 +91,6 @@ def create_model(flags, device):
         )
         model.load_state_dict(distil_actor_nad_core(load_data), strict=False)
         freeze(model)
-        # TODO: we should validate whether there are those modules of the model
         unfreeze_selected(model, ["baseline", "embed_ln"])
 
     return model
@@ -105,19 +104,11 @@ def load_model(load_dir, device):
     model.load_state_dict(checkpoint_states["model_state_dict"])
     return model
 
-def set_requires_grad(model, modules, requires_grad: bool):
-    for name in modules:
-        m = getattr(model, name, None)
-        if m is not None:
-            for param in m.parameters():
-                param.requires_grad = requires_grad
-
 
 def set_requires_grad(model, modules: List[str], requires_grad: bool):
-    for name in modules:
-        m = getattr(model, name, None)
-        if m is not None:
-            for param in m.parameters():
+    for module_name in modules:
+        for name, param in model.named_parameters():
+            if module_name in name:
                 param.requires_grad = requires_grad
 
 

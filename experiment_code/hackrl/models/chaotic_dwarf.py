@@ -23,8 +23,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import Dict
-
 import torch
 from nle import nethack
 from torch import nn
@@ -291,11 +289,6 @@ class ChaoticDwarvenGPT5(nn.Module):
             torch.zeros(self.core.num_layers, batch_size, self.core.hidden_size)
             for _ in range(2)
         )
-
-    def set_requires_grad(self, modules: Dict[str, bool]):
-        for name, requires_grad in modules.items():
-            for param in getattr(self, name).parameters():
-                param.requires_grad = requires_grad
 
     def forward(self, inputs, core_state):
         T, B, C, H, W = inputs["screen_image"].shape
