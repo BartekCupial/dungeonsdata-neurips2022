@@ -34,14 +34,16 @@ config = {
     "weight_decay": 0.01,
 
     "use_checkpoint_actor": True,
-    "model_checkpoint_path": "/tscratch/nle/30_04-06_07-relaxed_spence/2023-04-30-pretrain-no-returns_usal_0/checkpoint/hackrl/nle/2023_04_30_pretrain_no_returns_0/checkpoint.tar",
+    "model_checkpoint_path": "/tscratch/nle/30_04-06_07-relaxed_spence/2023-04-30-pretrain-no-returns_usal_1/checkpoint/hackrl/nle/2023_04_30_pretrain_no_returns_1/checkpoint.tar",
+
+    "appo_clip_policy": 0.02,
+    "use_returns": False,
 }
 
-# one with rtg an one without
-kickstarting_paths = [
-    "/tscratch/nle/30_04-06_07-relaxed_spence/2023-04-30-pretrain-no-returns_usal_0/checkpoint/hackrl/nle/2023_04_30_pretrain_no_returns_0/checkpoint.tar",
-    "/scratch/nle/25_04-10_53-romantic_davinci/2023-04-25-search-layer-head_wxxn_0/checkpoint/hackrl/nle/2023_04_25_search_layer_head_0/checkpoint.tar",
-]
+# without rtg
+small_model = "/tscratch/nle/30_04-06_07-relaxed_spence/2023-04-30-pretrain-no-returns_usal_1/checkpoint/hackrl/nle/2023_04_30_pretrain_no_returns_1/checkpoint.tar"
+# with rtg
+big_model = "/scratch/nle/25_04-10_53-romantic_davinci/2023-04-25-search-layer-head_wxxn_0/checkpoint/hackrl/nle/2023_04_25_search_layer_head_0/checkpoint.tar"
 
 
 # params different between exps
@@ -51,14 +53,14 @@ params_grid = [
         "n_head": [4],
         "use_checkpoint_actor": [True],
         "unfreeze_actor_steps": [50_000_000],
-        "kickstarting_path": kickstarting_paths,
+        "kickstarting_path": [small_model, big_model],
         "seed": [0], # reduced number of seeds
     },
     {
         "n_layer": [3],
         "n_head": [4],
         "use_checkpoint_actor": [False],
-        "kickstarting_path": kickstarting_paths,
+        "kickstarting_path": [small_model, big_model],
         "seed": [0], # reduced number of seeds
     },
 ]

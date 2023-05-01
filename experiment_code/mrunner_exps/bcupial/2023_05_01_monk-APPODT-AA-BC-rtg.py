@@ -33,8 +33,10 @@ config = {
     "weight_decay": 0.01,
 
     "use_checkpoint_actor": True,
-    "model_checkpoint_path": "/tscratch/nle/30_04-06_07-relaxed_spence/2023-04-30-pretrain-no-returns_usal_0/checkpoint/hackrl/nle/2023_04_30_pretrain_no_returns_0/checkpoint.tar",
+    "model_checkpoint_path": "/tscratch/nle/30_04-06_07-relaxed_spence/2023-04-30-pretrain-no-returns_usal_1/checkpoint/hackrl/nle/2023_04_30_pretrain_no_returns_1/checkpoint.tar",
 
+    "appo_clip_policy": 0.02,
+    "use_returns": False,
 }
 
 
