@@ -9,6 +9,8 @@ import pprint
 import signal
 import socket
 import time
+
+from pathlib import Path
 from typing import Optional
 
 import coolname
@@ -1123,18 +1125,9 @@ def main(cfg):
             ):
                 learner_state.last_checkpoint = learner_state.train_time
                 save_checkpoint(checkpoint_path, learner_state)
-            if (
-                learner_state.train_time - learner_state.last_checkpoint_history
-                >= FLAGS.checkpoint_history_interval
-            ):
-                learner_state.last_checkpoint_history = learner_state.train_time
-                save_checkpoint(
-                    os.path.join(
-                        FLAGS.savedir,
-                        "checkpoint_v%d.tar" % learner_state.model_version,
-                    ),
-                    learner_state,
-                )
+            last_checkpoint_path = Path(FLAGS.savedir) / f"checkpoint_v{learner_state.model_version}.tar"
+            if (learner_state.model_version + 1) % FLAGS.checkpoint_save_every == 0 and not last_checkpoint_path.exists():
+                save_checkpoint(last_checkpoint_path, learner_state)
 
         if accumulator.has_gradients():
             gradient_stats = accumulator.get_gradient_stats()
