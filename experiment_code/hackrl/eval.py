@@ -162,12 +162,12 @@ def parse_args(args=None):
     parser.add_argument("--batch_size", type=int, default=512)
     parser.add_argument("--num_actor_cpus", type=int, default=20)
     parser.add_argument("--num_actor_batches", type=int, default=2)
-    parser.add_argument("--device", type=str, default="cuda")
+    parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--score_target", type=float, default=5000)
     # wandb stuff
     parser.add_argument("--wandb", type=bool, default=False)
     parser.add_argument("--group", type=str, default="group2")
-    parser.add_argument("--exp_prefix", type=str, default="eval2")
+    parser.add_argument("--exp_tags", type=str, default="eval2")
     return parser.parse_known_args(args=args)[0]
 
 
@@ -176,7 +176,6 @@ def main(variant):
     checkpoint_dir = variant["checkpoint_dir"]
     output_dir = variant["output_dir"]
     rollouts = variant["rollouts"]
-    min_steps = variant["min_steps"]
     device = variant["device"]
     log_to_wandb = variant["wandb"]
     kwargs = dict(
@@ -200,7 +199,6 @@ def main(variant):
     results = evaluate_folder( 
         name=name, 
         path=checkpoint_dir, 
-        min_steps=min_steps, 
         device=device, 
         pbar_idx=0, 
         output_dir=output_dir,
@@ -220,7 +218,6 @@ def main(variant):
     )
     if results[2] > -2:
         data = (
-            min_steps,
             rollouts,
         ) + results
         os.makedirs(f"{output_dir}/{name}/", exist_ok=True)

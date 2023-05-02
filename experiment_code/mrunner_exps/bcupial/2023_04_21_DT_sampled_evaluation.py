@@ -7,7 +7,7 @@ name = globals()["script"][:-3]
 
 # params for all exps
 config = {
-    "exp_prefix": [name],
+    "exp_tags": [name],
     "name": "eval_monk-AA-DT-40k-newembeds",
     "checkpoint_dir": "/checkpoint/hackrl/nle/monk-AA-DT-40k-newembeds/checkpoint.tar",
     "output_dir": "DT_results",
