@@ -9,10 +9,9 @@ name = globals()["script"][:-3]
 config = {
     "exp_prefix": [name],
     "name": "eval_monk-AA-DT-40k-newembeds",
-    "checkpoint_dir": "/checkpoint/hackrl/nle/monk-AA-DT-40k-newembeds",
-    "min_steps": 1_000_000_000,
+    "checkpoint_dir": "/checkpoint/hackrl/nle/monk-AA-DT-40k-newembeds/checkpoint.tar",
     "output_dir": "DT_results",
-    "num_actor_cpus": 40,
+    "num_actor_cpus": 20,
     "num_actor_batches": 2,
     "rollouts": 1024,
     "batch_size": 256,

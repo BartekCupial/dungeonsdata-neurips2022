@@ -139,55 +139,18 @@ def generate_envpool_rollouts(
     return len(returns), np.mean(returns), np.std(returns), np.median(returns)
 
 
-def find_checkpoint(path, min_steps, device):
-    # versions = []
-    # flags = omegaconf.OmegaConf.create(
-    #     torch.load(path / "checkpoint.tar", map_location=torch.device(device))["flags"]
-    # )
-    # for f in os.listdir(path):
-    #     ff = str(f)
-    #     if ff.startswith("checkpoint_v"):
-    #         v = int(ff.replace("checkpoint_v", "").replace(".tar", ""))
-    #         versions.append(v)
-    # desired_v = min_steps / (flags.batch_size * flags.unroll_length)
-    # for v in sorted(versions):
-    #     allowed_paths = [
-    #         "/checkpoint/ehambro/20220531/meek-binturong",
-    #         "/checkpoint/ehambro/20220531/adamant-viper",
-    #         "/checkpoint/ehambro/20220531/hallowed-bat",
-    #         "/checkpoint/ehambro/20220531/celadon-llama",
-    #     ]
-    #     if v > desired_v or v > 122070.325 or (path in allowed_paths and v > 18000):
-    #         return f"{path}/checkpoint_v{v}.tar"
-    # return f"{path}/checkpoint_v{v}.tar"
-
-    print("Returning checkpoint.tar")
-    return f"{path}/checkpoint.tar"
-
-
-def evaluate_folder(name, path, min_steps, device, pbar_idx, output_dir, **kwargs):
-    p_ckpt = find_checkpoint(path, min_steps, device)
-    if not p_ckpt:
-        print(f"Not yet: {name} - {path}")
-        return (
-            name,
-            path,
-            -1,
-            -1,
-            -1,
-            -1,
-        )
-    print(f"{pbar_idx} {name} Using: {p_ckpt}")
+def evaluate_folder(name, path, device, pbar_idx, output_dir, **kwargs):
+    print(f"{pbar_idx} {name} Using: {path}")
     save_dir = Path(output_dir) / name
     save_dir.mkdir(parents=True, exist_ok=True)
-    model, flags = load_model_and_flags(p_ckpt, device)
+    model, flags = load_model_and_flags(path, device)
     returns = generate_envpool_rollouts(
         model=model, 
         flags=flags, 
         pbar_idx=pbar_idx, 
         **kwargs,
     )
-    return (name, p_ckpt) + returns
+    return (name, path) + returns
 
 
 def parse_args(args=None):
@@ -195,7 +158,6 @@ def parse_args(args=None):
     parser.add_argument("--name", type=str)
     parser.add_argument("--checkpoint_dir", type=Path)
     parser.add_argument("--output_dir", type=Path)
-    parser.add_argument("--min_steps", type=int, default=1_000_000_000)
     parser.add_argument("--rollouts", type=int, default=1024)
     parser.add_argument("--batch_size", type=int, default=512)
     parser.add_argument("--num_actor_cpus", type=int, default=20)
