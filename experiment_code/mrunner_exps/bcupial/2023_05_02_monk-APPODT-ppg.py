@@ -40,7 +40,12 @@ params_grid = [
     {
         "adam_learning_rate": [0.0001],
         "baseline_learning_rate": [0.001],
-        "lambda_gae": [1.0, 0.98, 0.96, 0.94, 0.92, 0.9],
+        "lambda_gae": [0.98],
+        "ppg_sleep": [True],
+        "ppg_sleep_sample_reuse": [4, 6, 8],
+        "ppg_sleep_cycles": [2, 3, 4],
+        "ppg_baseline_cost": [1.0],
+        "ppg_kl_loss": [1.0],
         "entropy_cost": [0.0],
         "n_layer": [3],
         "n_head": [4],
@@ -57,7 +62,6 @@ for e, cfg in enumerate(params_configurations):
     r = RandomWords().get_random_word()
     cfg["group"] = [f"{name}_{e}_{r}"]
     final_grid.append(dict(cfg))
-
 
 experiments_list = create_experiments_helper(
     experiment_name=name,
