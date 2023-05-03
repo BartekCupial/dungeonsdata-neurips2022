@@ -18,12 +18,22 @@ from hackrl.core import nest
 ENVS = None
 
 
-def load_model_and_flags(path, device):
+def load_model_and_flags(path, device, eval=False):
     load_data = torch.load(path, map_location=torch.device(device))
     flags = omegaconf.OmegaConf.create(load_data["flags"])
     flags.device = device
     model = hackrl.models.create_model(flags, device)
-    if flags.use_kickstarting:
+
+    if flags.use_kickstarting and eval:
+        # remove teacher weights
+        student_params = dict(filter(lambda x: x[0].startswith("student"), load_data["learner_state"]["model"].items()))
+        # modify keys
+        student_params = dict(map(lambda x: (x[0].removeprefix("student."), x[1]), student_params.items()))
+        model.load_state_dict(student_params)
+
+        return model, flags
+
+    if flags.use_kickstarting and not eval:
         print("Kickstarting")
         t_data = torch.load(flags.kickstarting_path)
         t_flags = omegaconf.OmegaConf.create(t_data["flags"])
@@ -143,7 +153,7 @@ def evaluate_folder(name, path, device, pbar_idx, output_dir, **kwargs):
     print(f"{pbar_idx} {name} Using: {path}")
     save_dir = Path(output_dir) / name
     save_dir.mkdir(parents=True, exist_ok=True)
-    model, flags = load_model_and_flags(path, device)
+    model, flags = load_model_and_flags(path, device, eval=True)
     returns = generate_envpool_rollouts(
         model=model, 
         flags=flags, 
