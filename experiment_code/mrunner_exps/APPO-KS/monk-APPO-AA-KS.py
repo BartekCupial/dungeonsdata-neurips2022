@@ -25,8 +25,7 @@ config = {
 # params different between exps
 params_grid = [
     {
-        "seed": [0, 1, 2],
-        "unfreeze_actor_steps": [0, 10_000_000],
+        "seed":  list(range(5)),
     },
 ]
 

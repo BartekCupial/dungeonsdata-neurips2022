@@ -1024,6 +1024,7 @@ def main(cfg):
     is_leader = False
     is_connected = False
     unfreezed = False
+    checkpoint_steps = 0
     while not terminate:
         prev_now = now
         now = time.time()
@@ -1125,9 +1126,14 @@ def main(cfg):
             ):
                 learner_state.last_checkpoint = learner_state.train_time
                 save_checkpoint(checkpoint_path, learner_state)
-            last_checkpoint_path = Path(FLAGS.savedir) / f"checkpoint_v{learner_state.model_version}.tar"
-            if (learner_state.model_version + 1) % FLAGS.checkpoint_save_every == 0 and not last_checkpoint_path.exists():
-                save_checkpoint(last_checkpoint_path, learner_state)
+            if steps // FLAGS.checkpoint_save_every > checkpoint_steps:
+                save_checkpoint(                
+                    os.path.join(
+                        FLAGS.savedir, "checkpoint_v%d" % (steps // FLAGS.checkpoint_save_every) * FLAGS.checkpoint_save_every
+                    ), 
+                    learner_state
+                )
+                checkpoint_steps = steps // FLAGS.checkpoint_save_every
 
         if accumulator.has_gradients():
             gradient_stats = accumulator.get_gradient_stats()

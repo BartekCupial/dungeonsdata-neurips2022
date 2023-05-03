@@ -22,7 +22,7 @@ config = {
 # params different between exps
 params_grid = [
     {
-        "seed": [0, 1, 2],
+        "seed": list(range(5)),
     },
 ]
 
