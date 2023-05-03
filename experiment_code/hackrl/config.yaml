@@ -30,7 +30,7 @@ adam_beta1: 0.9
 adam_beta2: 0.999
 adam_eps: 0.0000001
 adam_learning_rate: 0.0001
-baseline_learning_rate: 'null' # if float baseline will have different lr
+baseline_learning_rate: null # if float baseline will have different lr
 weight_decay: 0.0001
 warmup_steps: 1 # for lambdaLR scheduler
 appo_clip_policy: 0.1  # 'null' to disable clipping
