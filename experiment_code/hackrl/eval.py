@@ -235,7 +235,7 @@ def main(variant):
             f.write(",".join(str(d) for d in data) + "\n")
     print("done")
 
-    if wandb:
+    if log_to_wandb:
         wandb.log(stats_values)
 
 
