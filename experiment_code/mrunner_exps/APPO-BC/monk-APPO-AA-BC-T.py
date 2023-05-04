@@ -24,10 +24,12 @@ config = {
 # params different between exps
 params_grid = [
     {
-        "seed":  list(range(5)),
+        "supervised_loss":[0.2],
+        "supervised_decay": [0.9995],
+        "seed":  list(range(1)),
         "unfreeze_actor_steps": [50_000_000],
         "use_checkpoint_actor": [True],
-        "model_checkpoint_path": ["/checkpoint/hackrl/nle/monk-AA-BC_1/checkpoint.tar"],
+        "model_checkpoint_path": ["/net/tscratch/people/plgmostaszewski/dungeonsdata-neurips2022/experiment_code/monk-AA-BC/checkpoint.tar"],
     },
 ]
 

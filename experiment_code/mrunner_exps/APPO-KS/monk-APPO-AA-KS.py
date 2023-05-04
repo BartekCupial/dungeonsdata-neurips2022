@@ -25,7 +25,9 @@ config = {
 # params different between exps
 params_grid = [
     {
-        "seed":  list(range(5)),
+        "seed":  list(range(1)),
+        "kickstarting_loss": [0.2],
+        "kickstarting_decay": [0.9995],
     },
 ]
 

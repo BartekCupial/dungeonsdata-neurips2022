@@ -24,7 +24,9 @@ config = {
 # params different between exps
 params_grid = [
     {
-        "seed":  list(range(5)),
+        "seed":  list(range(1)),
+        "supervised_loss":[0.2],
+        "supervised_decay": [0.9995],
     },
 ]
 
