@@ -47,7 +47,7 @@ params_grid = [
         "adam_learning_rate": [0.00002],
         # "baseline_learning_rate": [0.001],
         "weight_decay": [0.04],
-        "batch_size": [128],
+        "batch_size": [64],
         "actor_batch_size": [128],
         "virtual_batch_size": [128, 256, 512, 1024],
         "unroll_length": [128],

@@ -48,15 +48,16 @@ params_grid = [
         "ttyrec_batch_size": [256],
         "use_returns": [False],
     },
-    # {
-    #     "seed": [0],
-    #     "unroll_length": [128],
-    #     "ttyrec_unroll_length": [128],
-    #     "batch_size": [32],
-    #     "actor_batch_size": [64],
-    #     "ttyrec_batch_size": [128],
-    #     "use_returns": [False],
-    # },
+    {
+        "adam_learning_rate": [0.0001, 0.0002, 0.0006],
+        "seed": [0],
+        "unroll_length": [128],
+        "ttyrec_unroll_length": [128],
+        "batch_size": [32],
+        "actor_batch_size": [64],
+        "ttyrec_batch_size": [128],
+        "use_returns": [False],
+    },
 ]
 
 params_configurations = get_combinations(params_grid)
