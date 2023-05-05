@@ -642,7 +642,7 @@ def compute_gradients(data, learner_state, stats):
             )
         FLAGS.supervised_loss *= FLAGS.supervised_decay
         stats["supervised_loss"] += supervised_loss.item()
-        stats["supervised__coeff"] += FLAGS.supervised_loss
+        stats["supervised_coeff"] += FLAGS.supervised_loss
         total_loss += supervised_loss
         if FLAGS.use_inverse_model:
             if FLAGS.use_inverse_model_only:

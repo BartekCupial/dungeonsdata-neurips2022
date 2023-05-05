@@ -1,5 +1,5 @@
 from pathlib import Path
-
+from random_words import RandomWords
 from mrunner.helpers.specification_helper import create_experiments_helper, get_combinations
 
 
@@ -25,7 +25,7 @@ config = {
 params_grid = [
     {
         "supervised_loss":[0.2],
-        "supervised_decay": [0.9995],
+        "supervised_decay": [0.9995, 0.9996, 0.9996, 0.9997, 0.9998, 0.9999],
         "seed":  list(range(1)),
         "unfreeze_actor_steps": [50_000_000],
         "use_checkpoint_actor": [True],
@@ -38,7 +38,8 @@ params_configurations = get_combinations(params_grid)
 final_grid = []
 for e, cfg in enumerate(params_configurations):
     cfg = {key: [value] for key, value in cfg.items()}
-    cfg["group"] = [f"{name}_{e}"]
+    r = RandomWords().random_word()
+    cfg["group"] = [f"{name}_{e}_{r}"]
     final_grid.append(dict(cfg))
 
 
