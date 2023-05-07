@@ -22,6 +22,7 @@ from ..tasks import ENVS
 from .baseline import BaselineNet
 from .chaotic_dwarf import ChaoticDwarvenGPT5
 from .decision_transformer import DecisionTransformer
+from .transfo_xl import TransfoXL
 from .offline_chaotic_dwarf import DQNChaoticDwarvenGPT5, IQLChaoticDwarvenGPT5 
 from .inverse_model import BigInverseOnlyModel
 from .kickstarter import KickStarter
@@ -40,6 +41,7 @@ MODELS = [
     CQL, 
     IQL,
     DecisionTransformer,
+    TransfoXL,
 ]
 MODELS_LOOKUP = {c.__name__: c for c in MODELS}
 

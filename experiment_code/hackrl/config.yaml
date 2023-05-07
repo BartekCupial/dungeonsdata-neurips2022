@@ -68,11 +68,12 @@ local_name: "${uid:}"
 log_fmt: "[%(levelname)s:${local_name} %(process)d %(module)s:%(lineno)d %(asctime)s] %(message)s"
 log_interval: 20
 model: ChaoticDwarvenGPT5
-# model: DecisionTransformer
+# model: DecisionTransformer # TransfoXL
 dropout: 0.1
 n_layer: 3
 n_head: 1
 hidden_dim: 512
+mem_len: 64
 
 normalize_advantages: True
 normalize_reward: False
