@@ -12,32 +12,6 @@ from hackrl.eval import evaluate_folder
 os.environ["MOOLIB_ALLOW_FORK"] = "1"
 
 
-def log(results, step):
-    returns = results["returns"]
-    steps = results["steps"]
-    scores = results["scores"]
-    times = results["times"]
-
-    wandb.log(        
-        {
-            "eval/mean_episode_return": np.mean(returns),
-            "eval/std_episode_return": np.std(returns),
-            "eval/median_episode_return": np.median(returns),
-            "eval/mean_episode_steps": np.mean(steps),
-            "eval/std_episode_steps": np.std(steps),
-            "eval/median_episode_steps": np.median(steps),
-
-            "eval/mean_episode_scores": np.mean(scores),
-            "eval/std_episode_scores": np.std(scores),
-            "eval/median_episode_scores": np.median(scores),
-            "eval/mean_episode_times": np.mean(times),
-            "eval/std_episode_times": np.std(times),
-            "eval/median_episode_times": np.median(times),
-        },
-        step=step
-    )
-
-
 def parse_args(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", type=str, default="evaluation_array")
@@ -68,17 +42,8 @@ def main(variant):
         num_actor_cpus=variant["num_actor_cpus"],
         num_actor_batches=variant["num_actor_batches"],
         score_target=variant["score_target"],
-        log_to_wandb=log_to_wandb,
+        log_to_wandb=False,
     )
-
-    if log_to_wandb:
-        wandb.init(
-            project="nle",
-            config=variant,
-            group=variant["group"],
-            entity="gmum",
-            name=name,
-        )
 
     checkpoint_dir = Path(checkpoint_dir)
 
@@ -104,8 +69,9 @@ def main(variant):
     checkpoints[step] = checkpoint_tar
 
     # sort checkpoints, we need to process them from oldest due to wandb
+    summary_results = dict()
     for e, (step, checkpoint) in enumerate(sorted(checkpoints.items())):
-        print(f"Evaluating checkpoint {checkpoint}")
+        print(f"Evaluating checkpoint {step}")
 
         results = evaluate_folder(
             pbar_idx=e, 
@@ -113,8 +79,37 @@ def main(variant):
             **kwargs,
         )
 
-        if log_to_wandb:
-            log(results, step)
+        returns = results["returns"]
+        steps = results["steps"]
+        scores = results["scores"]
+        times = results["times"]
+        summary_results[step] = {
+            "eval/mean_episode_return": np.mean(returns),
+            "eval/std_episode_return": np.std(returns),
+            "eval/median_episode_return": np.median(returns),
+            "eval/mean_episode_steps": np.mean(steps),
+            "eval/std_episode_steps": np.std(steps),
+            "eval/median_episode_steps": np.median(steps),
+
+            "eval/mean_episode_scores": np.mean(scores),
+            "eval/std_episode_scores": np.std(scores),
+            "eval/median_episode_scores": np.median(scores),
+            "eval/mean_episode_times": np.mean(times),
+            "eval/std_episode_times": np.std(times),
+            "eval/median_episode_times": np.median(times),
+        }
+        
+    if log_to_wandb:
+        wandb.init(
+            project="nle",
+            config=variant,
+            group=variant["group"],
+            entity="gmum",
+            name=name,
+        )
+        
+        for step, results in summary_results.items():
+            wandb.log(results, step=step)
 
 
 if __name__ == "__main__":
