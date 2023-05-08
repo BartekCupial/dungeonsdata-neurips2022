@@ -127,13 +127,13 @@ class TransfoXL(DecisionTransformer):
         all_ones = inputs_embeds.new_ones((qlen, klen), dtype=torch.uint8)
         mask_len = klen - self.mem_len
         if mask_len > 0:
-            mask_shift_len = mlen - mask_len
+            mask_shift_len = qlen - mask_len
         else:
-            mask_shift_len = mlen
+            mask_shift_len = qlen
         dec_attn_mask = (torch.triu(all_ones, 1 + mlen) + torch.tril(all_ones, -mask_shift_len))[:, :, None].repeat(1, 1, B)
         # update with mask from inputs
         state_mask = torch.cat([state_mask, inputs["mask"]], dim=0)
-        dec_attn_mask = torch.logical_or(dec_attn_mask, torch.logical_not(state_mask.unsqueeze(0)))
+        dec_attn_mask = dec_attn_mask | (~state_mask.unsqueeze(0)).to(torch.uint8)
         
 
         if inputs["done"].any():
@@ -152,7 +152,7 @@ class TransfoXL(DecisionTransformer):
                 # reset state if episode finished
                 init_state = self.initial_state(K=x+T)
                 state_mask[:x+T, y] = init_state["mask"].squeeze(-1)
-            dec_attn_mask = torch.logical_or(dec_attn_mask, mask)
+            dec_attn_mask = dec_attn_mask | mask
 
         core_output = self.core(
             inputs_embeds=inputs_embeds,
