@@ -19,7 +19,7 @@ name = globals()["script"][:-3]
 
 # params for all exps
 config = {
-    "exp_tags": name,
+    "exp_tags": [name],
     "run_kind": "rollout",
     "name": "rollout",
     "num_actor_cpus": 20,
@@ -27,7 +27,6 @@ config = {
     "rollouts": 8192,
     "batch_size": 256,
     "wandb": False,
-    'group': "monk-APPODT",
     "checkpoint_dir": "/path/to/checkpoint/file",
 }
 config = combine_config_with_defaults(config)
@@ -54,4 +53,4 @@ experiments_list = create_experiments_helper(
     exclude=["checkpoint"],
     base_config=config,
     params_grid=params_grid,
-) 
+)

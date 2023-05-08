@@ -14,19 +14,21 @@ def combine_config_with_defaults(config):
     res.update(config)
     return res
 
+
 name = globals()["script"][:-3]
 
 
 # params for all exps
 config = {
     "exp_tags": [name],
+    "run_kind": "rollout",
     "name": "rollout",
-    "checkpoint_dir": "/checkpoint/hackrl/nle/monk-AA-DT-40k-newembeds/checkpoint.tar",
-    "savedir": "rollout_results",
-    "num_actor_cpus": 20,
-    "rollouts": 8192,
-    "batch_size": 256,
+    "num_actor_cpus": 1,
+    "num_actor_batches": 1,
+    "rollouts": 1024,
+    "batch_size": 1,
     "wandb": True,
+    "checkpoint_dir": "/path/to/checkpoint/file",
 }
 config = combine_config_with_defaults(config)
 
@@ -47,10 +49,10 @@ experiments_list = create_experiments_helper(
     experiment_name=name,
     project_name="nle",
     with_neptune=False,
-    script="python3 mrunner_rollout.py",
+    script="python3 mrunner_eval.py",
     python_path=".",
     tags=[name],
     exclude=["checkpoint"],
     base_config=config,
     params_grid=params_grid,
-) 
+)
