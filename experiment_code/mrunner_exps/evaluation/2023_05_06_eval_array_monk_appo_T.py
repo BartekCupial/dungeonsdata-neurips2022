@@ -32,17 +32,17 @@ config = {
 }
 config = combine_config_with_defaults(config)
 
-root_dir = Path("/net/pr2/projects/plgrid/plgg_pw_crl/mostaszewski/mrunner_scratch/nle/05_05-22_07-objective_allen")
+root_dir = Path("/net/pr2/projects/plgrid/plgg_pw_crl/mostaszewski/mrunner_scratch/nle/06_05-11_07-elastic_mccarthy")
 checkpoint_step = 100_000_000
 
 # params different between exps
 params_grid = []
 for i in range(5):
-    seed_dir = root_dir / f"monk-appo-t_yzcl_{i}/checkpoint/hackrl/nle/monk-APPO-T_{i}_searchlights"
+    seed_dir = root_dir / f"monk-appo-t_85h5_{i}/checkpoint/hackrl/nle/monk-APPO-T_{i}_lips"
     params_grid.append(
         {
             "checkpoint_dir": [str(seed_dir / "checkpoint.tar")],
-            "group": [f"monk-APPO-T_{i}_searchlights"],
+            "group": [f"monk-APPO-T_{i}_lips"],
             "step": [checkpoint_step * 20],
         } 
     )
@@ -53,7 +53,7 @@ for i in range(5):
         params_grid.append(
             {
                 "checkpoint_dir": [str(chpt_i)],
-                "group": [f"monk-APPO-T_{i}_searchlights"],
+                "group": [f"monk-APPO-T_{i}_lips"],
                 "step": [step],
             } 
         )
