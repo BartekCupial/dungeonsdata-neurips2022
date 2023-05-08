@@ -1,11 +1,7 @@
-from functools import partial
-
 import torch
-import torch.nn as nn
 import transformers
 import torch.nn.functional as F
 
-from hackrl.core import nest
 from hackrl.models.trajectory_transfo_xl import TransfoXLModel
 from hackrl.models.decision_transformer import DecisionTransformer
 
@@ -49,7 +45,6 @@ class TransfoXL(DecisionTransformer):
             K = self.mem_len
         return dict(
             memory=self.core.init_mems(batch_size, mem_len=K),
-            timesteps=torch.zeros(K, batch_size),
             mask=torch.zeros(K, batch_size).to(torch.bool),
         )
 
@@ -57,7 +52,6 @@ class TransfoXL(DecisionTransformer):
         T, B, C, H, W = inputs["screen_image"].shape
         mems = core_state["memory"]
         state_mask = core_state["mask"]
-        # TODO: use timesteps as positional embeds
 
         if self.use_tty_only:
             topline = inputs["tty_chars"][..., 0, :]
@@ -109,15 +103,18 @@ class TransfoXL(DecisionTransformer):
         inputs_embeds = self.embed_input(core_input)
 
         if self.use_timesteps:
-            timesteps = inputs["timesteps"].permute(1, 0).unsqueeze(-1)
-        else:
-            timesteps = (
-                torch.arange(T, device=inputs["mask"].device)
-                .view(1, -1, 1)
-                .repeat(B, 1, 1)
-            )
-        timesteps = timesteps.long().squeeze(-1)
-        # pos_embs = self.core.pos_emb(timesteps)
+            timesteps = inputs["timesteps"]
+
+            if self.linear_time_embeddings:
+                timesteps = timesteps.permute(1, 0).unsqueeze(-1)
+                timesteps = timesteps.float() / self.flags.env.max_episode_steps
+                time_embeddings = self.embed_timestep(timesteps)
+            else:
+                timesteps = timesteps.long()
+                timesteps = timesteps.flatten()
+                time_embeddings = self.core.pos_emb(timesteps).view(B, T, -1)
+
+            inputs_embeds = inputs_embeds + time_embeddings
 
         inputs_embeds = self.embed_ln(inputs_embeds)
 
@@ -158,7 +155,6 @@ class TransfoXL(DecisionTransformer):
             inputs_embeds=inputs_embeds,
             mems=mems,
             dec_attn_mask=dec_attn_mask,
-            # pos_embs=pos_embs,
         )
         x = core_output["last_hidden_state"]
         new_memory = core_output["mems"]

@@ -812,7 +812,6 @@ class TransfoXLModel(TransfoXLPreTrainedModel):
         output_hidden_states=None,
         return_dict=None,
         dec_attn_mask=None,
-        pos_emb=None,
     ):
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
@@ -877,11 +876,10 @@ class TransfoXLModel(TransfoXLPreTrainedModel):
         hids = []
         attentions = [] if output_attentions else None
         if self.attn_type == 0:  # default
-            if pos_emb is None:
-                pos_seq = torch.arange(klen - 1, -1, -1.0, device=word_emb.device, dtype=word_emb.dtype)
-                if self.clamp_len > 0:
-                    pos_seq.clamp_(max=self.clamp_len)
-                pos_emb = self.pos_emb(pos_seq)
+            pos_seq = torch.arange(klen - 1, -1, -1.0, device=word_emb.device, dtype=word_emb.dtype)
+            if self.clamp_len > 0:
+                pos_seq.clamp_(max=self.clamp_len)
+            pos_emb = self.pos_emb(pos_seq)
 
             core_out = self.drop(word_emb)
             pos_emb = self.drop(pos_emb)
