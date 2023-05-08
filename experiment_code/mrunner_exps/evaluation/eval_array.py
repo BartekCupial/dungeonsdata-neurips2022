@@ -35,10 +35,10 @@ params_grid = [
     {
         "rollouts": [16],
         "batch_size": [4],
-        "checkpoint_dir": ["/home/bartek/Workspace/CW/dungeonsdata-neurips2022/checkpoint/hackrl/nle/monk-APPODT"],
+        "checkpoint_dir": ["/home/bartek/Workspace/CW/dungeonsdata-neurips2022/checkpoint/hackrl/nle/local"],
         'group': ["monk-APPODT"], # <- important, we need the same group as experiment we want to compare with
         "exp_tags": ["local"], # <- important, it is best to set for the same name as experiment we want to compare with
-        "checkpoint_step": [100_000_000],
+        "checkpoint_step": [10_000_000],
     },
 ]
 

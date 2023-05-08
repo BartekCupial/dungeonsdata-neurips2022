@@ -1,5 +1,7 @@
 import argparse
 import os
+import tempfile
+import shutil
 
 from pathlib import Path
 
@@ -10,6 +12,18 @@ import torch
 from hackrl.eval import evaluate_folder
 
 os.environ["MOOLIB_ALLOW_FORK"] = "1"
+
+
+def delete_temp_files(directory):
+    i = 0
+    for path in Path(directory).iterdir():
+        if path.name.startswith("nle"):
+            try:
+                shutil.rmtree(path)
+                i += 1
+            except Exception as e:
+                print(f"Error deleting dir: {path}\n{str(e)}")
+    print(f"Deleted {i} dirs")
 
 
 def parse_args(args=None):
@@ -68,6 +82,8 @@ def main(variant):
     step = load_data["learner_state"]["global_stats"]["steps_done"]["value"]
     checkpoints[step] = checkpoint_tar
 
+    tempdir = tempfile.TemporaryDirectory()
+
     # sort checkpoints, we need to process them from oldest due to wandb
     summary_results = dict()
     for e, (step, checkpoint) in enumerate(sorted(checkpoints.items())):
@@ -98,6 +114,7 @@ def main(variant):
             "eval/std_episode_times": np.std(times),
             "eval/median_episode_times": np.median(times),
         }
+        delete_temp_files(Path(tempdir.name).parent)
         
     if log_to_wandb:
         wandb.init(
