@@ -19,6 +19,7 @@ class TransfoXL(DecisionTransformer):
         device,
     ):
         super().__init__(shape, action_space, flags, device)
+        self.mem_len = flags.mem_len
 
         kwargs = dict(
             d_model=self.hidden_dim, 
@@ -43,18 +44,20 @@ class TransfoXL(DecisionTransformer):
         self.core.hidden_size = self.hidden_dim
         self.core.num_layers = flags.n_layer
 
+    def initial_state(self, batch_size=1, K=None):
+        if K is None:
+            K = self.mem_len
+        return dict(
+            memory=self.core.init_mems(batch_size, mem_len=K),
+            timesteps=torch.zeros(K, batch_size),
+            mask=torch.zeros(K, batch_size).to(torch.bool),
+        )
 
     def forward(self, inputs, core_state):
-        org_inputs = inputs
-        OT = org_inputs["screen_image"].shape[0]
-        K = max(self.max_length, OT)
-
-        core_state = dict(sorted({key: value for key, value in core_state.items() if key in inputs.keys()}.items()))
-        inputs = dict(sorted({key: value for key, value in inputs.items() if key in core_state.keys()}.items()))
-        inputs = nest.map_many(partial(torch.cat, dim=0), *[core_state, inputs])
-        inputs = nest.map(lambda x: x[-K :], inputs)
-
         T, B, C, H, W = inputs["screen_image"].shape
+        mems = core_state["memory"]
+        state_mask = core_state["mask"]
+        # TODO: use timesteps as positional embeds
 
         if self.use_tty_only:
             topline = inputs["tty_chars"][..., 0, :]
@@ -107,60 +110,58 @@ class TransfoXL(DecisionTransformer):
 
         if self.use_timesteps:
             timesteps = inputs["timesteps"].permute(1, 0).unsqueeze(-1)
-            if self.linear_time_embeddings:
-                timesteps = timesteps.float() / self.flags.env.max_episode_steps
-            else:
-                timesteps = timesteps.long().squeeze(-1)
         else:
             timesteps = (
                 torch.arange(T, device=inputs["mask"].device)
                 .view(1, -1, 1)
                 .repeat(B, 1, 1)
             )
-            if self.linear_time_embeddings:
-                timesteps = timesteps.float()  
-            else:
-                timesteps = timesteps.long().squeeze(-1)
-
-        time_embeddings = self.embed_timestep(timesteps)
-        inputs_embeds = inputs_embeds + time_embeddings
+        timesteps = timesteps.long().squeeze(-1)
+        # pos_embs = self.core.pos_emb(timesteps)
 
         inputs_embeds = self.embed_ln(inputs_embeds)
 
-        attention_mask = inputs["mask"].T
-        causal_mask = (
-            torch.tril(torch.ones((B, T, T), dtype=torch.uint8))
-            .view(B, 1, T, T)
-            .to(attention_mask.device)
-        )
+        qlen = T
+        mlen = mems[0].size(0)
+        klen = mlen + qlen
+        all_ones = inputs_embeds.new_ones((qlen, klen), dtype=torch.uint8)
+        mask_len = klen - self.mem_len
+        if mask_len > 0:
+            mask_shift_len = mlen - mask_len
+        else:
+            mask_shift_len = mlen
+        dec_attn_mask = (torch.triu(all_ones, 1 + mlen) + torch.tril(all_ones, -mask_shift_len))[:, :, None].repeat(1, 1, B)
+        # update with mask from inputs
+        state_mask = torch.cat([state_mask, inputs["mask"]], dim=0)
+        dec_attn_mask = torch.logical_or(dec_attn_mask, torch.logical_not(state_mask.unsqueeze(0)))
+        
+
         if inputs["done"].any():
             # # for breakpoint
-            # if "actions_converted" in org_inputs:
+            # if T == 32:
             #     print("breakpoint")
 
-            # modify causal mask, to prevent attending to states between games
-            mask = torch.ones_like(causal_mask)
-            xs, ys = torch.where(inputs["done"].T)
+            # modify to prevent attending to states between games
+            mask = torch.zeros_like(dec_attn_mask)
+            xs, ys = torch.where(inputs["done"])
             for x, y in zip(xs, ys):
-                mask[x] = 0
-                mask[x, :, y:, y:] = 1
-                mask[x, :, :y, :y] = 1
+                mask[:, :, y] = 1
+                mask[x:, x+T:, y] = 0
+                mask[:x, :x+T, y] = 0
 
                 # reset state if episode finished
-                init_state = self.initial_state(K=OT)
-                init_state = nest.map(torch.squeeze, init_state)
-                nest.slice(inputs, (slice(None), x), init_state)
-            causal_mask *= mask
+                init_state = self.initial_state(K=x+T)
+                state_mask[:x+T, y] = init_state["mask"].squeeze(-1)
+            dec_attn_mask = torch.logical_or(dec_attn_mask, mask)
 
         core_output = self.core(
             inputs_embeds=inputs_embeds,
-            attention_mask=attention_mask,
-            causal_mask=causal_mask,
+            mems=mems,
+            dec_attn_mask=dec_attn_mask,
+            # pos_embs=pos_embs,
         )
         x = core_output["last_hidden_state"]
-
-        # we only want to predict the same number of actions as seq len of org_inputs
-        x = x[:, -OT:]
+        new_memory = core_output["mems"]
 
         # -- [B' x A]
         policy_logits = self.policy(x)
@@ -168,11 +169,11 @@ class TransfoXL(DecisionTransformer):
         # -- [B' x 1]
         baseline = self.baseline(x).squeeze(-1)
 
-        action = torch.multinomial(F.softmax(policy_logits.view(B * OT, -1), dim=1), num_samples=1)
+        action = torch.multinomial(F.softmax(policy_logits.view(B * T, -1), dim=1), num_samples=1)
 
         policy_logits = policy_logits.permute(1, 0, 2)
         baseline = baseline.permute(1, 0)
-        action = action.view(B, OT).permute(1, 0)
+        action = action.view(B, T).permute(1, 0)
 
         version = torch.ones_like(action) * self.version
 
@@ -187,4 +188,7 @@ class TransfoXL(DecisionTransformer):
             inverse_action_logits = self.inverse_model(core_input)
             output["encoded_state"] = core_input
             output["inverse_action_logits"] = inverse_action_logits
-        return (output, inputs)
+
+        core_state["memory"] = new_memory
+        core_state["mask"] = state_mask[-self.mem_len:]
+        return (output, core_state)
