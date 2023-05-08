@@ -20,31 +20,44 @@ name = globals()["script"][:-3]
 
 # params for all exps
 config = {
-    "run_kind": "eval_array",
-    "name": "eval_array",
+    "exp_tags": [name],
+    "run_kind": "eval",
+    "name": "eval",
     "num_actor_cpus": 20,
     "num_actor_batches": 2,
     "rollouts": 1024,
     "batch_size": 256,
-    "checkpoint_step": 100_000_000,
     "wandb": True,
     "checkpoint_dir": "/path/to/checkpoint/dir",
-    "exp_tags": ["monk-APPO-AA-BC"], 
 }
 config = combine_config_with_defaults(config)
 
 root_dir = Path("/net/pr2/projects/plgrid/plgg_pw_crl/mostaszewski/mrunner_scratch/nle/03_05-13_30-eager_pike")
-
+group_pattern = "monk-APPO-AA-BC_"
+checkpoint_step = 100_000_000
 
 # params different between exps
-params_grid = [
-    {
-        "checkpoint_dir": [str(root_dir / f"monk-appo-aa-bc_buxc_{i}/checkpoint/hackrl/nle/monk-APPO-AA-BC_{i}//")],
-        # important, we need the same group as experiment we want to compare with
-        'group': [f"monk-APPO-AA-BC_{i}"], 
-        # important, it is best to set for the same name as experiment we want to compare with
-    } for i in range(5)
-]
+params_grid = []
+for i in range(5):
+    seed_dir = root_dir / f"monk-appo-aa-bc_buxc_{i}/checkpoint/hackrl/nle/{group_pattern}{i}"
+    params_grid.append(
+        {
+            "checkpoint_dir": [str(seed_dir / "checkpoint.tar")],
+            "group": [f"{group_pattern}{i}"],
+            "step": [checkpoint_step * 20],
+        } 
+    )
+
+    for ckpt in range(1, 20):
+        step = ckpt * checkpoint_step
+        chpt_i = seed_dir / f"checkpoint_v{step}"
+        params_grid.append(
+            {
+                "checkpoint_dir": [str(chpt_i)],
+                "group": [f"{group_pattern}{i}"],
+                "step": [step],
+            } 
+        )
 
 
 experiments_list = create_experiments_helper(

@@ -143,16 +143,16 @@ def generate_envpool_rollouts(
                 lens.append(int(env_outputs["timesteps"][j[0]]))
                 scores.append(bl_scores[i][-2][j[0]].item())
                 times.append(bl_times[i][-2][j[0]].item())
-                if log_to_wandb:
-                    wandb.log(
-                        {
-                            "episode_return": returns[-1],
-                            "episode_len": lens[-1],
-                            "episode_score": scores[-1],
-                            "episode_time": times[-1],
-                        },
-                        step=lens[-1]
-                    )
+                # if log_to_wandb:
+                #     wandb.log(
+                #         {
+                #             "episode_return": returns[-1],
+                #             "episode_len": lens[-1],
+                #             "episode_score": scores[-1],
+                #             "episode_time": times[-1],
+                #         },
+                #         step=lens[-1]
+                #     )
 
             current_reward[i] *= 1 - env_outputs["done"].int()
             timesteps[i] += 1
@@ -186,7 +186,7 @@ def evaluate_folder(path, device, **kwargs):
     return returns
 
 
-def log(results):
+def log(results, step=None):
     returns = results["returns"]
     steps = results["steps"]
     scores = results["scores"]
@@ -202,23 +202,22 @@ def log(results):
     
     table = wandb.Table(dataframe=df)
     wandb.log({"frame": table})
-    wandb.log(        
-        {
-            "eval/mean_episode_return": np.mean(returns),
-            "eval/std_episode_return": np.std(returns),
-            "eval/median_episode_return": np.median(returns),
-            "eval/mean_episode_steps": np.mean(steps),
-            "eval/std_episode_steps": np.std(steps),
-            "eval/median_episode_steps": np.median(steps),
+    data = {
+        "eval/mean_episode_return": np.mean(returns),
+        "eval/std_episode_return": np.std(returns),
+        "eval/median_episode_return": np.median(returns),
+        "eval/mean_episode_steps": np.mean(steps),
+        "eval/std_episode_steps": np.std(steps),
+        "eval/median_episode_steps": np.median(steps),
 
-            "eval/mean_episode_scores": np.mean(scores),
-            "eval/std_episode_scores": np.std(scores),
-            "eval/median_episode_scores": np.median(scores),
-            "eval/mean_episode_times": np.mean(times),
-            "eval/std_episode_times": np.std(times),
-            "eval/median_episode_times": np.median(times),
-        },
-    )
+        "eval/mean_episode_scores": np.mean(scores),
+        "eval/std_episode_scores": np.std(scores),
+        "eval/median_episode_scores": np.median(scores),
+        "eval/mean_episode_times": np.mean(times),
+        "eval/std_episode_times": np.std(times),
+        "eval/median_episode_times": np.median(times),
+    }
+    wandb.log(data, step=step)
 
 
 def parse_args(args=None):
@@ -233,6 +232,7 @@ def parse_args(args=None):
     parser.add_argument("--score_target", type=float, default=5000)
     # wandb stuff
     parser.add_argument("--wandb", type=bool, default=False)
+    parser.add_argument("--step", type=bool, default=None)
     parser.add_argument("--group", type=str, default="eval")
     parser.add_argument("--exp_tags", type=str, default="eval")
     return parser.parse_known_args(args=args)[0]
@@ -271,7 +271,8 @@ def main(variant):
     )
 
     if log_to_wandb:
-        log(results)
+        log(results, variant["step"])
+
 
 
 if __name__ == "__main__":

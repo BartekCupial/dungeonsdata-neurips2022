@@ -19,7 +19,7 @@ name = globals()["script"][:-3]
 
 # params for all exps
 config = {
-    "exp_tags": name,
+    "exp_tags": [name],
     "run_kind": "eval",
     "name": "eval",
     "num_actor_cpus": 20,
