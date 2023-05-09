@@ -210,7 +210,6 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
                 mask[x] = 0
                 mask[x, :, y:, y:] = 1
                 mask[x, :, :y, :y] = 1
-                # TODO: BUG w should remove only some parts of inputs
                 # reset state if episode finished
                 init_state = self.initial_state(K=y)
                 init_state = nest.map(torch.squeeze, init_state)
