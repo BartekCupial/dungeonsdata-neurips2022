@@ -29,39 +29,35 @@ def unfreeze(d):
 def create_dataframe(filters):
     runs = api.runs("gmum/nle", filters=filters)
     data = []
+    configs = {}
     for run in runs:
         df = {}
         for key, value in ast.literal_eval(run.summary.__repr__()).items():
-            if key.startswith("_"):
-                continue
-
             if isinstance(value, numbers.Number):
                 df[key] = value
 
-        df["step"] = run.config["step"]
         df["group"] = run.config["group"]
         data.append(df)
+        configs[run.config["group"]] = run.config
 
-    return pd.DataFrame(data)
+    return pd.DataFrame(data), configs
 
 
-def log_group(group, df, variant):
-    variant["group"] = group
-
+def log_group(group, df, config):
     wandb.init(
         project="nle",
-        group="monk-APPO",
-        config=variant,
+        group=group,
+        config=config,
         entity="gmum",
         name=f"eval_stitch_{group}",
     )
     df = df[df["group"] == group]
-    df = df.sort_values(["step"])
+    df = df.sort_values(["_step"])
 
     for index, row in df.iterrows():
         logs = row.to_dict()
         del logs["group"]
-        wandb.log(logs, step=logs["step"])
+        wandb.log(logs, step=logs["_step"])
 
     wandb.finish()
 
@@ -74,12 +70,14 @@ def parse_args(args=None):
 
 def main(variant):
     filters = {"$and": [variant["filters"]]}
-    df = create_dataframe(filters)
-    df = df.sort_values(["step"])
+    df, configs = create_dataframe(filters)
+    df = df.sort_values(["_step"])
 
     groups = df["group"].unique()
     for group in groups:
-        log_group(group, df, variant)
+        config = configs[group]
+        config.update(variant)
+        log_group(group, df, config)
 
 
 if __name__ == "__main__":

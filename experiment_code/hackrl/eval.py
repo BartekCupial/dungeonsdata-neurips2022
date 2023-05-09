@@ -16,6 +16,7 @@ from nle import nethack
 import hackrl.core
 import hackrl.environment
 import hackrl.models
+from hackrl.utils.temp_files import delete_temp_files
 from hackrl.core import nest
 import matplotlib.pyplot as plt
 
@@ -273,6 +274,7 @@ def main(variant):
         )
         log(results, step)
 
+    delete_temp_files()
 
 
 if __name__ == "__main__":
