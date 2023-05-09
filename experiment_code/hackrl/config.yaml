@@ -112,6 +112,7 @@ baseline:
 
 run_teacher_hs: False
 use_kickstarting: False
+log_kickstarting: False
 kickstarting_loss: 1.0
 kickstarting_decay: 1.0
 kickstarting_path: /net/pr2/projects/plgrid/plgggmum_crl/bcupial/monk-AA-BC/checkpoint.tar

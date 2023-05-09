@@ -774,14 +774,27 @@ def compute_gradients(data, learner_state, stats):
         stats["inverse_loss"] += inverse_loss.item()
 
     if FLAGS.use_kickstarting:
-        kickstarting_loss = FLAGS.kickstarting_loss * compute_kickstarting_loss(
+        if FLAGS.log_kickstarting:
+            kickstarting_loss = compute_kickstarting_loss(
+                learner_outputs["policy_logits"],
+                actor_outputs["kick_policy_logits"],
+            )
+        else:
+            kickstarting_loss = FLAGS.kickstarting_loss * compute_kickstarting_loss(
+                learner_outputs["policy_logits"],
+                actor_outputs["kick_policy_logits"],
+            )
+            FLAGS.kickstarting_loss *= FLAGS.kickstarting_decay
+            total_loss += kickstarting_loss
+        stats["kickstarting_loss"] += kickstarting_loss.item()
+        stats["kickstarting_coeff"] += FLAGS.kickstarting_loss
+
+    if not FLAGS.use_kickstarting and FLAGS.log_kickstarting:
+        kickstarting_loss = compute_kickstarting_loss(
             learner_outputs["policy_logits"],
             actor_outputs["kick_policy_logits"],
         )
-        FLAGS.kickstarting_loss *= FLAGS.kickstarting_decay
-        total_loss += kickstarting_loss
         stats["kickstarting_loss"] += kickstarting_loss.item()
-        stats["kickstarting_coeff"] += FLAGS.kickstarting_loss
 
     total_loss.backward()
 
