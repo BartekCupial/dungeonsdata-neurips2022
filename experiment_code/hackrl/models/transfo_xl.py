@@ -110,7 +110,7 @@ class TransfoXL(DecisionTransformer):
                 timesteps = timesteps.float() / self.flags.env.max_episode_steps
                 time_embeddings = self.embed_timestep(timesteps)
             else:
-                timesteps = timesteps.long()
+                timesteps = timesteps.permute(1, 0).long()
                 timesteps = timesteps.flatten()
                 time_embeddings = self.core.pos_emb(timesteps).view(B, T, -1)
 
