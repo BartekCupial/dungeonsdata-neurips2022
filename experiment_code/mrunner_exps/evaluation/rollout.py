@@ -5,7 +5,11 @@ from hackrl.eval_array import parse_args as eval_array_parse_args
 from hackrl.rollout import parse_args as rollout_parse_args
 
 
-PARSE_ARGS_DICT = {"eval": eval_parse_args, "eval_array": eval_array_parse_args, "rollout": rollout_parse_args}
+PARSE_ARGS_DICT = {
+    "eval": eval_parse_args,
+    "eval_array": eval_array_parse_args,
+    "rollout": rollout_parse_args,
+}
 
 
 def combine_config_with_defaults(config):
@@ -36,7 +40,9 @@ params_grid = [
     {
         "rollouts": [16],
         "batch_size": [4],
-        "checkpoint_dir": ["/home/bartek/Workspace/data/nethack_checkpoints/monk-AA-BC/checkpoint.tar"],
+        "checkpoint_dir": [
+            "/home/bartek/Workspace/data/nethack_checkpoints/monk-AA-BC/checkpoint.tar"
+        ],
         "wandb": [True],
         "savedir": ["nle_data"],
     },

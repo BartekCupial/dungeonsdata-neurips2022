@@ -5,7 +5,11 @@ from hackrl.eval_array import parse_args as eval_array_parse_args
 from hackrl.rollout import parse_args as rollout_parse_args
 
 
-PARSE_ARGS_DICT = {"eval": eval_parse_args, "eval_array": eval_array_parse_args, "rollout": rollout_parse_args}
+PARSE_ARGS_DICT = {
+    "eval": eval_parse_args,
+    "eval_array": eval_array_parse_args,
+    "rollout": rollout_parse_args,
+}
 
 
 def combine_config_with_defaults(config):
@@ -13,6 +17,7 @@ def combine_config_with_defaults(config):
     res = vars(PARSE_ARGS_DICT[run_kind]([]))
     res.update(config)
     return res
+
 
 name = globals()["script"][:-3]
 
@@ -49,7 +54,7 @@ params_grid = [
             monk_appo_aa_bc_t,
             monk_appo_aa_ks,
             monk_appo_aa_ks_t,
-        ]
+        ],
     },
 ]
 
@@ -63,4 +68,4 @@ experiments_list = create_experiments_helper(
     exclude=["checkpoint"],
     base_config=config,
     params_grid=params_grid,
-) 
+)

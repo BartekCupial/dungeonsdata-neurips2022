@@ -5,7 +5,11 @@ from hackrl.eval_array import parse_args as eval_array_parse_args
 from hackrl.rollout import parse_args as rollout_parse_args
 
 
-PARSE_ARGS_DICT = {"eval": eval_parse_args, "eval_array": eval_array_parse_args, "rollout": rollout_parse_args}
+PARSE_ARGS_DICT = {
+    "eval": eval_parse_args,
+    "eval_array": eval_array_parse_args,
+    "rollout": rollout_parse_args,
+}
 
 
 def combine_config_with_defaults(config):
@@ -39,7 +43,9 @@ params_grid = [
         "savedir": ["/nle/nld-bc/nld_data"],
     },
     {
-        "checkpoint_dir": ["/tscratch/nle/30_04-06_07-relaxed_spence/2023-04-30-pretrain-no-returns_usal_1/checkpoint/hackrl/nle/2023_04_30_pretrain_no_returns_1/checkpoint.tar"],
+        "checkpoint_dir": [
+            "/tscratch/nle/30_04-06_07-relaxed_spence/2023-04-30-pretrain-no-returns_usal_1/checkpoint/hackrl/nle/2023_04_30_pretrain_no_returns_1/checkpoint.tar"
+        ],
         "savedir": ["/nle/nld-dt/nld_data"],
     },
 ]

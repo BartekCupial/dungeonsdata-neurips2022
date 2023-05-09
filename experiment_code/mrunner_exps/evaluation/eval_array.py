@@ -5,7 +5,11 @@ from hackrl.eval_array import parse_args as eval_array_parse_args
 from hackrl.rollout import parse_args as rollout_parse_args
 
 
-PARSE_ARGS_DICT = {"eval": eval_parse_args, "eval_array": eval_array_parse_args, "rollout": rollout_parse_args}
+PARSE_ARGS_DICT = {
+    "eval": eval_parse_args,
+    "eval_array": eval_array_parse_args,
+    "rollout": rollout_parse_args,
+}
 
 
 def combine_config_with_defaults(config):
@@ -13,6 +17,7 @@ def combine_config_with_defaults(config):
     res = vars(PARSE_ARGS_DICT[run_kind]([]))
     res.update(config)
     return res
+
 
 name = globals()["script"][:-3]
 
@@ -35,9 +40,15 @@ params_grid = [
     {
         "rollouts": [16],
         "batch_size": [4],
-        "checkpoint_dir": ["/home/bartek/Workspace/CW/dungeonsdata-neurips2022/checkpoint/hackrl/nle/local"],
-        'group': ["monk-APPODT"], # <- important, we need the same group as experiment we want to compare with
-        "exp_tags": ["local"], # <- important, it is best to set for the same name as experiment we want to compare with
+        "checkpoint_dir": [
+            "/home/bartek/Workspace/CW/dungeonsdata-neurips2022/checkpoint/hackrl/nle/local"
+        ],
+        "group": [
+            "monk-APPODT"
+        ],  # <- important, we need the same group as experiment we want to compare with
+        "exp_tags": [
+            "local"
+        ],  # <- important, it is best to set for the same name as experiment we want to compare with
         "checkpoint_step": [10_000_000],
     },
 ]
@@ -53,4 +64,4 @@ experiments_list = create_experiments_helper(
     exclude=["checkpoint"],
     base_config=config,
     params_grid=params_grid,
-) 
+)

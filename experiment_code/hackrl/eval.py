@@ -22,11 +22,12 @@ import matplotlib.pyplot as plt
 ENVS = None
 
 
-def load_model_and_flags(path, device):
+def load_model_flags_and_step(path, device):
     load_data = torch.load(path, map_location=torch.device(device))
     flags = omegaconf.OmegaConf.create(load_data["flags"])
     flags.device = device
     model = hackrl.models.create_model(flags, device)
+    step = load_data["learner_state"]["global_stats"]["steps_done"]["value"]
 
     if flags.use_kickstarting:
         print("Kickstarting")
@@ -35,10 +36,10 @@ def load_model_and_flags(path, device):
         # modify keys
         student_params = dict(map(lambda x: (x[0].removeprefix("student."), x[1]), student_params.items()))
         model.load_state_dict(student_params)
-        return model, flags
+        return model, flags, step
 
     model.load_state_dict(load_data["learner_state"]["model"])
-    return model, flags
+    return model, flags, step
 
 
 def generate_envpool_rollouts(
@@ -177,13 +178,13 @@ def generate_envpool_rollouts(
 
 
 def evaluate_folder(path, device, **kwargs):
-    model, flags = load_model_and_flags(path, device)
+    model, flags, step = load_model_flags_and_step(path, device)
     returns = generate_envpool_rollouts(
         model=model, 
         flags=flags, 
         **kwargs,
     )
-    return returns
+    return returns, flags, step
 
 
 def log(results, step=None):
@@ -232,9 +233,7 @@ def parse_args(args=None):
     parser.add_argument("--score_target", type=float, default=5000)
     # wandb stuff
     parser.add_argument("--wandb", type=bool, default=False)
-    parser.add_argument("--step", type=bool, default=None)
-    parser.add_argument("--group", type=str, default="eval")
-    parser.add_argument("--exp_tags", type=str, default="eval")
+    parser.add_argument("--exp_kind", type=str, default="eval")
     return parser.parse_known_args(args=args)[0]
 
 
@@ -253,25 +252,26 @@ def main(variant):
         log_to_wandb=log_to_wandb,
     )
 
-    if log_to_wandb:
-        wandb.init(
-            project="nle",
-            config=variant,
-            group=variant["group"],
-            entity="gmum",
-            name=name,
-        )
-
     print(f"Evaluating checkpoint {checkpoint_dir}")
 
-    results = evaluate_folder(
+    results, flags, step = evaluate_folder(
         pbar_idx=0, 
         path=checkpoint_dir, 
         **kwargs
     )
 
+    config = omegaconf.OmegaConf.to_container(flags)
+    config.update(variant)
+
     if log_to_wandb:
-        log(results, variant["step"])
+        wandb.init(
+            project="nle",
+            config=config,
+            group=config["group"],
+            entity="gmum",
+            name=name,
+        )
+        log(results, step)
 
 
 
