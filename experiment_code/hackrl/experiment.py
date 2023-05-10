@@ -37,6 +37,7 @@ from hackrl.core import nest
 from hackrl.core import record
 from hackrl.core import vtrace
 
+# TODO: not sure how to do eval without is, but we should be careful
 os.environ["MOOLIB_ALLOW_FORK"] = "1"
 
 # TTYREC_ASYNC_ITERATOR = None
@@ -1064,6 +1065,8 @@ def main(cfg):
             raise NotImplementedError
     else:
         score_target = 100000
+
+    assert FLAGS.eval_checkpoint_every % FLAGS.checkpoint_save_every == 0, "when we evaluate we should have fresh checkpoint saved"
 
     # Run.
     now = time.time()

@@ -11,6 +11,8 @@ import torch
 import json
 import tqdm
 import wandb
+import shutil
+import tempfile
 import pandas as pd
 
 from nle import nethack
@@ -18,7 +20,6 @@ from nle import nethack
 import hackrl.core
 import hackrl.environment
 import hackrl.models
-from hackrl.utils.temp_files import delete_temp_files
 from hackrl.core import nest
 import matplotlib.pyplot as plt
 
@@ -299,18 +300,36 @@ def main(variant):
         )
         log(results, step)
 
-    delete_temp_files()
-
     with open(variant["results_path"], "w") as file:
         json.dump(results_to_dict(results), file)
 
 
-def eval_subprocess(**config):
+def spawn_subprocess(temp_dir, **config):
+    tempfile.tempdir = temp_dir
+
     arguments = [
         item for key, value in config.items() for item in [f"--{key}", str(value)]
     ]
     cmd = ["python", "-m", "hackrl.eval"] + arguments
     subprocess.run(cmd)
+
+
+def eval_subprocess(**config):
+    tempdir = tempfile.tempdir
+
+    # Create a temporary directory to store the files
+    temp_directory = tempfile.mkdtemp()
+
+    try:
+        # Spawn the subprocess with the custom temporary directory
+        spawn_subprocess(temp_directory, **config)
+
+        # Continue with any other operations related to the subprocess
+    finally:
+        # Remove the temporary directory and its contents
+        shutil.rmtree(temp_directory)
+
+    tempfile.tempdir = tempdir
 
 
 if __name__ == "__main__":
