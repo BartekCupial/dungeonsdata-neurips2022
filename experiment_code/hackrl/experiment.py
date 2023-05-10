@@ -786,13 +786,6 @@ def compute_gradients(data, learner_state, stats):
         stats["kickstarting_loss"] += kickstarting_loss.item()
         stats["kickstarting_coeff"] += FLAGS.kickstarting_loss
 
-    if not FLAGS.use_kickstarting and FLAGS.log_kickstarting:
-        kickstarting_loss = compute_kickstarting_loss(
-            learner_outputs["policy_logits"],
-            actor_outputs["kick_policy_logits"],
-        )
-        stats["kickstarting_loss"] += kickstarting_loss.item()
-
     if FLAGS.use_bc:
         ttyrec_data = TTYREC_ENVPOOL.result()
         idx = TTYREC_ENVPOOL.idx
@@ -806,38 +799,21 @@ def compute_gradients(data, learner_state, stats):
         student_logits = torch.flatten(ttyrec_predictions["policy_logits"], 0, 1)
         teacher_logits = torch.flatten(ttyrec_predictions["kick_policy_logits"], 0, 1)
 
-      
-        kickstarting_loss = FLAGS.kickstarting_loss * compute_kickstarting_loss(
-            student_logits,
-            teacher_logits,
-        )
-       
-       
-        FLAGS.kickstarting_loss *= FLAGS.kickstarting_decay
-        total_loss += kickstarting_loss
+        if FLAGS.log_kickstarting_bc:
+            kickstarting_loss = compute_kickstarting_loss(
+                student_logits,
+                teacher_logits,
+            )
+        else:
+            kickstarting_loss = FLAGS.kickstarting_loss * compute_kickstarting_loss(
+                student_logits,
+                teacher_logits,
+            )
+            FLAGS.kickstarting_loss *= FLAGS.kickstarting_decay
+            total_loss += kickstarting_loss
+
         stats["bc_kickstarting_loss"] += kickstarting_loss.item()
         stats["bc_kickstarting_coeff"] += FLAGS.kickstarting_loss
-    
-    if not FLAGS.use_bc and FLAGS.log_kickstarting_bc:
-        ttyrec_data = TTYREC_ENVPOOL.result()
-        idx = TTYREC_ENVPOOL.idx
-        ttyrec_predictions, TTYREC_HIDDEN_STATE[idx] = model(
-            ttyrec_data, TTYREC_HIDDEN_STATE[idx]
-        )
-        TTYREC_HIDDEN_STATE[idx] = nest.map(
-            lambda t: t.detach(), TTYREC_HIDDEN_STATE[idx]
-        )
-
-        student_logits = torch.flatten(ttyrec_predictions["policy_logits"], 0, 1)
-        teacher_logits = torch.flatten(ttyrec_predictions["kick_policy_logits"], 0, 1)
-
-      
-        kickstarting_loss = compute_kickstarting_loss(
-            student_logits,
-            teacher_logits,
-        )
-       
-        stats["bc_kickstarting_loss"] += kickstarting_loss.item()
 
     total_loss.backward()
 
