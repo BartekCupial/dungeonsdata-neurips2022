@@ -69,7 +69,7 @@ def parse_args(args=None):
 
 
 def main(variant):
-    filters = {"$and": [variant["filters"]]}
+    filters = variant["filters"]
     df, configs = create_dataframe(filters)
     df = df.sort_values(["_step"])
 
