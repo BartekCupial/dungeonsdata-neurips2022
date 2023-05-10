@@ -9,6 +9,7 @@ import pprint
 import signal
 import socket
 import time
+import json
 from typing import Optional
 
 import coolname
@@ -29,11 +30,14 @@ import hackrl.models
 
 from hackrl.utils.dataset_scores import get_dataset_scores
 from hackrl.utils.utils import set_seed
+from hackrl.eval import eval_subprocess
 
 import render_utils
 from hackrl.core import nest
 from hackrl.core import record
 from hackrl.core import vtrace
+
+os.environ["MOOLIB_ALLOW_FORK"] = "1"
 
 # TTYREC_ASYNC_ITERATOR = None
 # TTYREC_DATA = None
@@ -1071,7 +1075,8 @@ def main(cfg):
     is_leader = False
     is_connected = False
     unfreezed = False
-    checkpoint_steps = 0
+    checkpoint_steps = -1
+    eval_steps = -1
     while not terminate:
         prev_now = now
         now = time.time()
@@ -1169,6 +1174,32 @@ def main(cfg):
                     learner_state
                 )
                 checkpoint_steps = steps // FLAGS.checkpoint_save_every
+
+            if steps // FLAGS.eval_checkpoint_every > eval_steps:
+                last_checkpoint_path = os.path.join(
+                    FLAGS.savedir, "checkpoint_v%d" % ((steps // FLAGS.checkpoint_save_every) * FLAGS.checkpoint_save_every)
+                )
+                results_path = os.path.join(
+                    FLAGS.savedir, "eval_v%d.json" % ((steps // FLAGS.eval_checkpoint_every) * FLAGS.eval_checkpoint_every)
+                )
+                eval_kwargs = {
+                    "checkpoint_dir": last_checkpoint_path,
+                    "results_path": results_path,
+                    "rollouts": FLAGS.eval_rollouts,
+                    "batch_size": FLAGS.eval_batch_size,
+
+                    "device": FLAGS.device,
+                    "score_target": score_target,
+                }
+                eval_subprocess(**eval_kwargs)
+
+                with open(results_path, "r") as file:
+                    eval_results = json.load(file)
+
+                if FLAGS.wandb:
+                    wandb.log(eval_results)
+
+                eval_steps = steps // FLAGS.eval_checkpoint_every
 
         if accumulator.has_gradients():
             gradient_stats = accumulator.get_gradient_stats()

@@ -1,4 +1,5 @@
 import argparse
+import subprocess
 
 from collections import deque
 from pathlib import Path
@@ -7,6 +8,7 @@ import moolib
 import numpy as np
 import omegaconf
 import torch
+import json
 import tqdm
 import wandb
 import pandas as pd
@@ -33,9 +35,16 @@ def load_model_flags_and_step(path, device):
     if flags.use_kickstarting:
         print("Kickstarting")
         # remove teacher weights
-        student_params = dict(filter(lambda x: x[0].startswith("student"), load_data["learner_state"]["model"].items()))
+        student_params = dict(
+            filter(
+                lambda x: x[0].startswith("student"),
+                load_data["learner_state"]["model"].items(),
+            )
+        )
         # modify keys
-        student_params = dict(map(lambda x: (x[0].removeprefix("student."), x[1]), student_params.items()))
+        student_params = dict(
+            map(lambda x: (x[0].removeprefix("student."), x[1]), student_params.items())
+        )
         model.load_state_dict(student_params)
         return model, flags, step
 
@@ -44,13 +53,13 @@ def load_model_flags_and_step(path, device):
 
 
 def generate_envpool_rollouts(
-    model, 
-    flags, 
-    rollouts=1024, 
+    model,
+    flags,
+    rollouts=1024,
     batch_size=512,
-    num_actor_cpus = 20,
-    num_actor_batches = 2,
-    pbar_idx=0, 
+    num_actor_cpus=20,
+    num_actor_batches=2,
+    pbar_idx=0,
     score_target=10000,
     savedir=None,
     save_ttyrec_every=0,
@@ -65,7 +74,9 @@ def generate_envpool_rollouts(
     device = flags.device
 
     ENVS = moolib.EnvPool(
-        lambda: hackrl.environment.create_env(flags, savedir=savedir, save_ttyrec_every=save_ttyrec_every),
+        lambda: hackrl.environment.create_env(
+            flags, savedir=savedir, save_ttyrec_every=save_ttyrec_every
+        ),
         num_processes=num_actor_cpus,
         batch_size=batch_size,
         num_batches=num_actor_batches,
@@ -131,8 +142,12 @@ def generate_envpool_rollouts(
             bl_times[i].append(env_outputs["blstats"][:, nethack.NLE_BL_TIME])
 
             env_outputs["timesteps"] = timesteps[i]
-            env_outputs["max_scores"] = (torch.ones_like(env_outputs["timesteps"]) * score_target).float()
-            env_outputs["mask"] = torch.ones_like(env_outputs["timesteps"]).to(torch.bool)
+            env_outputs["max_scores"] = (
+                torch.ones_like(env_outputs["timesteps"]) * score_target
+            ).float()
+            env_outputs["mask"] = torch.ones_like(env_outputs["timesteps"]).to(
+                torch.bool
+            )
             env_outputs["scores"] = current_reward[i]
 
             done_and_valid = env_outputs["done"].int() * rollouts_left[i].bool().int()
@@ -181,14 +196,36 @@ def generate_envpool_rollouts(
 def evaluate_folder(path, device, **kwargs):
     model, flags, step = load_model_flags_and_step(path, device)
     returns = generate_envpool_rollouts(
-        model=model, 
-        flags=flags, 
+        model=model,
+        flags=flags,
         **kwargs,
     )
     return returns, flags, step
 
 
-def log(results, step=None):
+def results_to_dict(results):
+    returns = results["returns"]
+    steps = results["steps"]
+    scores = results["scores"]
+    times = results["times"]
+
+    return {
+        "eval/mean_episode_return": np.mean(returns),
+        "eval/std_episode_return": np.std(returns),
+        "eval/median_episode_return": np.median(returns),
+        "eval/mean_episode_steps": np.mean(steps),
+        "eval/std_episode_steps": np.std(steps),
+        "eval/median_episode_steps": np.median(steps),
+        "eval/mean_episode_scores": np.mean(scores),
+        "eval/std_episode_scores": np.std(scores),
+        "eval/median_episode_scores": np.median(scores),
+        "eval/mean_episode_times": np.mean(times),
+        "eval/std_episode_times": np.std(times),
+        "eval/median_episode_times": np.median(times),
+    }
+
+
+def log(results):
     returns = results["returns"]
     steps = results["steps"]
     scores = results["scores"]
@@ -199,33 +236,21 @@ def log(results, step=None):
     ax2.scatter(times, scores)
     wandb.log({"scatter_plot": wandb.Image(fig)})
 
-    df = pd.DataFrame({"returns": returns, "steps": steps, "scores": scores, "times": times})
+    df = pd.DataFrame(
+        {"returns": returns, "steps": steps, "scores": scores, "times": times}
+    )
     df.to_csv("rollout_stats.csv", index=None)
-    
+
     table = wandb.Table(dataframe=df)
     wandb.log({"frame": table})
-    data = {
-        "eval/mean_episode_return": np.mean(returns),
-        "eval/std_episode_return": np.std(returns),
-        "eval/median_episode_return": np.median(returns),
-        "eval/mean_episode_steps": np.mean(steps),
-        "eval/std_episode_steps": np.std(steps),
-        "eval/median_episode_steps": np.median(steps),
-
-        "eval/mean_episode_scores": np.mean(scores),
-        "eval/std_episode_scores": np.std(scores),
-        "eval/median_episode_scores": np.median(scores),
-        "eval/mean_episode_times": np.mean(times),
-        "eval/std_episode_times": np.std(times),
-        "eval/median_episode_times": np.median(times),
-    }
-    wandb.log(data, step=step)
+    wandb.log(results_to_dict(results))
 
 
 def parse_args(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", type=str, default="evaluation")
     parser.add_argument("--checkpoint_dir", type=Path)
+    parser.add_argument("--results_path", type=Path, default="data.json")
     parser.add_argument("--rollouts", type=int, default=1024)
     parser.add_argument("--batch_size", type=int, default=512)
     parser.add_argument("--num_actor_cpus", type=int, default=20)
@@ -244,7 +269,7 @@ def main(variant):
     log_to_wandb = variant["wandb"]
 
     kwargs = dict(
-        device=variant["device"], 
+        device=variant["device"],
         rollouts=variant["rollouts"],
         batch_size=variant["batch_size"],
         num_actor_cpus=variant["num_actor_cpus"],
@@ -276,7 +301,18 @@ def main(variant):
 
     delete_temp_files()
 
+    with open(variant["results_path"], "w") as file:
+        json.dump(results_to_dict(results), file)
+
+
+def eval_subprocess(**config):
+    arguments = [
+        item for key, value in config.items() for item in [f"--{key}", str(value)]
+    ]
+    cmd = ["python", "-m", "hackrl.eval"] + arguments
+    subprocess.run(cmd)
+
 
 if __name__ == "__main__":
     args = vars(parse_args())
-    main(variant=vars(args))
+    main(variant=args)
