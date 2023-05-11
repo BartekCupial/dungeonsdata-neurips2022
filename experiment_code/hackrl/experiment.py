@@ -44,17 +44,24 @@ from hackrl.core import vtrace
 # TTYREC_DATA = None
 TTYREC_HIDDEN_STATE = None
 TTYREC_ENVPOOL = None
-
+EWC_INSTANCE = None
 
 
 class EWC(object):
-    def __init__(self, model: nn.Module, dataset: list, data:dict):
+    def __init__(self, model: nn.Module, data: dict):
 
         self.model = model
-        self.dataset = dataset
         self.data = data
 
-        self.params = {n: p for n, p in self.model.named_parameters() if p.requires_grad}
+        env_outputs = data["env_outputs"]
+        initial_core_state = data["initial_core_state"]
+        self.dataset = [(env_outputs, initial_core_state)]
+
+        self.params = {
+            n: p
+            for n, p in self.model.named_parameters()
+            if p.requires_grad and "baseline".casefold() not in n.casefold()
+        }
         self._means = {}
         self._precision_matrices = self._diag_fisher()
 
@@ -78,10 +85,11 @@ class EWC(object):
 
             for n, p in self.model.named_parameters():
                 if "baseline".casefold() not in n.casefold():
-                    precision_matrices[n].data += p.grad.data ** 2 / len(self.dataset)
+                    precision_matrices[n].data += p.grad.data**2 / len(self.dataset)
 
         precision_matrices = {n: p for n, p in precision_matrices.items()}
         cudnn.enabled = True
+        self.model.train()
         return precision_matrices
 
     def _calc_loss(self, learner_outputs):
@@ -131,7 +139,7 @@ class TtyrecEnvPool:
         self.idx = 0
         self.env_pool_size = flags.ttyrec_envpool_size
         self.dataset = dataset.TtyrecDataset(dataset_name, **dataset_kwargs)
-        # self.dataset._rootpath = "/home/mbortkie/repos/rl/dungeonsdata-neurips2022/experiment_code/nle/nld-bc"
+        self.dataset._rootpath = "/home/mbortkie/repos/rl/dungeonsdata-neurips2022/experiment_code/nle/nld-bc"
         self.dataset.shuffle = True
         self.threadpool = dataset_kwargs["threadpool"]
         self.dataset_scores = dataset_scores
@@ -718,7 +726,7 @@ def create_scheduler(optimizer):
 
 
 def compute_gradients(data, learner_state, stats):
-    global TTYREC_ENVPOOL, TTYREC_HIDDEN_STATE, FORGETTING_ENVPOOL, FORGETTING_HIDDEN_STATE
+    global TTYREC_ENVPOOL, TTYREC_HIDDEN_STATE, EWC_INSTANCE, FORGETTING_ENVPOOL, FORGETTING_HIDDEN_STATE
     model = learner_state.model
 
     env_outputs = data["env_outputs"]
@@ -728,6 +736,10 @@ def compute_gradients(data, learner_state, stats):
     model.train()
 
     total_loss = 0
+
+    if EWC_INSTANCE is None:
+        # It means that we do not load TTYREC
+        EWC_INSTANCE = EWC(model, data)
 
     if FLAGS.supervised_loss or FLAGS.behavioural_clone:
         ttyrec_data = TTYREC_ENVPOOL.result()
@@ -790,9 +802,6 @@ def compute_gradients(data, learner_state, stats):
             return
 
     learner_outputs, _ = model(env_outputs, initial_core_state)
-
-    ewc = EWC(model, [(env_outputs, initial_core_state)], data)
-    ewc_penalty = ewc.penalty(model)
 
     # Use last baseline value (from the value function) to bootstrap.
     bootstrap_value = learner_outputs["baseline"][-1]
@@ -893,6 +902,9 @@ def compute_gradients(data, learner_state, stats):
         total_loss += kickstarting_loss_bc
         stats["kickstarting_loss_bc"] += kickstarting_loss_bc.item()
         stats["kickstarting_coeff_bc"] += FLAGS.kickstarting_loss_bc
+    if FLAGS.use_ewc:
+        ewc_penalty = EWC_INSTANCE.penalty(model)
+        total_loss += ewc_penalty * FLAGS.ewc_penalty_scaler
 
         # Only call step when you are done with ttyrec_data - it may get overwritten
         TTYREC_ENVPOOL.step()
@@ -1232,6 +1244,19 @@ def main(cfg):
     is_connected = False
     unfreezed = False
     checkpoint_steps = -1
+
+    if TTYREC_ENVPOOL is not None:
+        global EWC_INSTANCE
+        ttyrec_data = TTYREC_ENVPOOL.result()
+        # idx = TTYREC_ENVPOOL.idx
+        ttyrec_data = TTYREC_ENVPOOL.result()
+        idx = TTYREC_ENVPOOL.idx
+        ttyrec_predictions, TTYREC_HIDDEN_STATE[idx] = model(
+            ttyrec_data, TTYREC_HIDDEN_STATE[idx]
+        )
+
+        EWC_INSTANCE = EWC(learner_state.model, TTYREC_ENVPOOL.result())
+
     while not terminate:
         prev_now = now
         now = time.time()
@@ -1336,8 +1361,8 @@ def main(cfg):
             stats["num_gradients"] += gradient_stats["num_gradients"]
             step_optimizer(learner_state, stats)
             accumulator.zero_gradients()
-        # elif not learn_batcher.empty() and accumulator.wants_gradients():
-        elif not learn_batcher.empty():
+        elif not learn_batcher.empty() and accumulator.wants_gradients():
+        # elif not learn_batcher.empty():
             compute_gradients(learn_batcher.get(), learner_state, stats)
             accumulator.reduce_gradients(FLAGS.batch_size)
         else:
