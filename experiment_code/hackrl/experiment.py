@@ -10,6 +10,8 @@ import signal
 import socket
 import time
 from typing import Optional
+import torch.backends.cudnn as cudnn
+
 
 import coolname
 import hydra
@@ -23,6 +25,8 @@ import wandb
 from nle.dataset import dataset
 from nle.dataset import db
 from nle.dataset import populate_db
+from torch.autograd import Variable
+from copy import deepcopy
 
 import hackrl.environment
 import hackrl.models
@@ -35,11 +39,90 @@ import render_utils
 from hackrl.core import nest
 from hackrl.core import record
 from hackrl.core import vtrace
-
 # TTYREC_ASYNC_ITERATOR = None
 # TTYREC_DATA = None
 TTYREC_HIDDEN_STATE = None
 TTYREC_ENVPOOL = None
+
+
+
+class EWC(object):
+    def __init__(self, model: nn.Module, dataset: list, data:dict):
+
+        self.model = model
+        self.dataset = dataset
+        self.data = data
+
+        self.params = {n: p for n, p in self.model.named_parameters() if p.requires_grad}
+        self._means = {}
+        self._precision_matrices = self._diag_fisher()
+
+        for n, p in copy.deepcopy(self.params).items():
+            self._means[n] = p.data
+
+    def _diag_fisher(self):
+        precision_matrices = {}
+        for n, p in deepcopy(self.params).items():
+            p.data.zero_()
+            precision_matrices[n] = p.data
+
+        self.model.eval()
+        cudnn.enabled = False
+
+        for input in self.dataset:
+            self.model.zero_grad()
+            output, _ = self.model(input[0], input[1])
+            loss = self._calc_loss(output)
+            loss.backward()
+
+            for n, p in self.model.named_parameters():
+                if "baseline".casefold() not in n.casefold():
+                    precision_matrices[n].data += p.grad.data ** 2 / len(self.dataset)
+
+        precision_matrices = {n: p for n, p in precision_matrices.items()}
+        cudnn.enabled = True
+        return precision_matrices
+
+    def _calc_loss(self, learner_outputs):
+        data = self.data
+        env_outputs = data["env_outputs"]
+        actor_outputs = data["actor_outputs"]
+        rewards = env_outputs["reward"] * FLAGS.reward_scale
+        bootstrap_value = learner_outputs["baseline"][-1]
+        discounts = (~env_outputs["done"]).float() * FLAGS.discounting
+
+        vtrace_returns = vtrace.from_logits(
+            behavior_policy_logits=actor_outputs["policy_logits"],
+            target_policy_logits=learner_outputs["policy_logits"],
+            actions=actor_outputs["action"],
+            discounts=discounts,
+            rewards=rewards,
+            values=learner_outputs["baseline"],
+            bootstrap_value=bootstrap_value,
+        )
+
+        entropy_loss = FLAGS.entropy_cost * compute_entropy_loss(
+            learner_outputs["policy_logits"]
+        )
+
+        pg_loss = compute_policy_gradient_loss(
+            vtrace_returns.behavior_action_log_probs,
+            vtrace_returns.target_action_log_probs,
+            vtrace_returns.pg_advantages,
+            FLAGS.normalize_advantages,
+            FLAGS.appo_clip_policy,
+        )
+        total_loss = entropy_loss + pg_loss
+        return total_loss
+
+    def penalty(self, model: nn.Module):
+        loss = 0
+        for n, p in model.named_parameters():
+            if "baseline".casefold() not in n.casefold():
+                _loss = self._precision_matrices[n] * (p - self._means[n]) ** 2
+                loss += _loss.sum()
+        return loss
+
 
 
 class TtyrecEnvPool:
@@ -47,6 +130,7 @@ class TtyrecEnvPool:
         self.idx = 0
         self.env_pool_size = flags.ttyrec_envpool_size
         self.dataset = dataset.TtyrecDataset(flags.dataset, **dataset_kwargs)
+        # self.dataset._rootpath = "/home/mbortkie/repos/rl/dungeonsdata-neurips2022/experiment_code/nle/nld-bc"
         self.dataset.shuffle = True
         self.threadpool = dataset_kwargs["threadpool"]
         self.dataset_scores = dataset_scores
@@ -574,7 +658,8 @@ def compute_policy_gradient_loss(
     stats=None,
 ):
     advantages = advantages.detach()
-    stats["running_advantages"] += advantages
+    if stats:
+        stats["running_advantages"] += advantages
 
     adv = advantages
 
@@ -585,7 +670,8 @@ def compute_policy_gradient_loss(
         else:
             sample_adv = adv
         advantages = (adv - sample_adv.mean()) / max(1e-3, sample_adv.std())
-        stats["sample_advantages"] += advantages.mean().item()
+        if stats:
+            stats["sample_advantages"] += advantages.mean().item()
 
     if clip_delta_policy:
         # APPO policy loss - clip a change in policy fn
@@ -704,6 +790,9 @@ def compute_gradients(data, learner_state, stats):
 
     learner_outputs, _ = model(env_outputs, initial_core_state)
 
+    ewc = EWC(model, [(env_outputs, initial_core_state)], data)
+    ewc_penalty = ewc.penalty(model)
+
     # Use last baseline value (from the value function) to bootstrap.
     bootstrap_value = learner_outputs["baseline"][-1]
 
@@ -741,6 +830,7 @@ def compute_gradients(data, learner_state, stats):
         learner_outputs["policy_logits"], stats
     )
 
+    # TODO: should we add ewc_penalty to this loss?
     pg_loss = compute_policy_gradient_loss(
         vtrace_returns.behavior_action_log_probs,
         vtrace_returns.target_action_log_probs,
@@ -1030,7 +1120,8 @@ def main(cfg):
 
     checkpoint_path = os.path.join(FLAGS.savedir, "checkpoint.tar")
 
-    if os.path.exists(checkpoint_path):
+    # if os.path.exists(checkpoint_path):
+    if False:
         logging.info("Loading checkpoint: %s" % checkpoint_path)
         load_checkpoint(checkpoint_path, learner_state)
         accumulator.set_model_version(learner_state.model_version)
@@ -1203,21 +1294,21 @@ def main(cfg):
                 )
                 checkpoint_steps = steps // FLAGS.checkpoint_save_every
 
-            if (steps // FLAGS.eval_checkpoint_every > eval_steps) and not accumulator.has_gradients():
-                eval_kwargs = {
-                    "rollouts": FLAGS.eval_rollouts,
-                    "batch_size": FLAGS.eval_batch_size,
-                    "device": FLAGS.device,
-                    "score_target": score_target,
-                    "num_actor_batches": FLAGS.num_actor_batches,
-                }
-                
-                eval_results, eval_step_results = evaluate_model(eval_envs, model, eval_step_results=eval_step_results, **eval_kwargs)
-
-                if FLAGS.wandb:
-                    wandb.log(eval_results, step=steps)
-
-                eval_steps = steps // FLAGS.eval_checkpoint_every
+            # if (steps // FLAGS.eval_checkpoint_every > eval_steps) and not accumulator.has_gradients():
+            #     eval_kwargs = {
+            #         "rollouts": FLAGS.eval_rollouts,
+            #         "batch_size": FLAGS.eval_batch_size,
+            #         "device": FLAGS.device,
+            #         "score_target": score_target,
+            #         "num_actor_batches": FLAGS.num_actor_batches,
+            #     }
+            #
+            #     eval_results, eval_step_results = evaluate_model(eval_envs, model, eval_step_results=eval_step_results, **eval_kwargs)
+            #
+            #     if FLAGS.wandb:
+            #         wandb.log(eval_results, step=steps)
+            #
+            #     eval_steps = steps // FLAGS.eval_checkpoint_every
 
         if accumulator.has_gradients():
             gradient_stats = accumulator.get_gradient_stats()
@@ -1225,7 +1316,8 @@ def main(cfg):
             stats["num_gradients"] += gradient_stats["num_gradients"]
             step_optimizer(learner_state, stats)
             accumulator.zero_gradients()
-        elif not learn_batcher.empty() and accumulator.wants_gradients():
+        # elif not learn_batcher.empty() and accumulator.wants_gradients():
+        elif not learn_batcher.empty():
             compute_gradients(learn_batcher.get(), learner_state, stats)
             accumulator.reduce_gradients(FLAGS.batch_size)
         else:
