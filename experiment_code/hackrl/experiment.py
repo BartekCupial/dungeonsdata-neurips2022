@@ -47,14 +47,23 @@ EWC_INSTANCE = None
 
 
 class EWC(object):
-    def __init__(self, model: nn.Module, data: dict):
+    def __init__(
+        self,
+        model: nn.Module,
+        use_ttyrec: bool = False,
+        data: Optional[dict] = None,
+        n_batches: int = 10,
+    ):
 
         self.model = model
-        self.data = data
 
-        env_outputs = data["env_outputs"]
-        initial_core_state = data["initial_core_state"]
-        self.dataset = [(env_outputs, initial_core_state)]
+        if use_ttyrec:
+            self.use_ttyrec = True
+        else:
+            self.data = data
+            self.use_ttyrec = False
+
+        self._create_dataset(n_batches)
 
         self.params = {
             n: p
@@ -66,6 +75,21 @@ class EWC(object):
 
         for n, p in copy.deepcopy(self.params).items():
             self._means[n] = p.data
+
+    def _create_dataset(self, n_batches: int=10):
+        if self.use_ttyrec:
+            global TTYREC_ENVPOOL, TTYREC_HIDDEN_STATE
+            self.dataset = []
+            for i in range(n_batches):
+                env_outputs = TTYREC_ENVPOOL.result()
+                idx = TTYREC_ENVPOOL.idx
+                initial_core_state = TTYREC_HIDDEN_STATE[idx]
+                self.dataset += [(env_outputs, initial_core_state)]
+
+        else:
+            env_outputs = self.data["env_outputs"]
+            initial_core_state = self.data["initial_core_state"]
+            self.dataset = [(env_outputs, initial_core_state)]
 
     def _diag_fisher(self):
         precision_matrices = {}
@@ -79,7 +103,7 @@ class EWC(object):
         for input in self.dataset:
             self.model.zero_grad()
             output, _ = self.model(input[0], input[1])
-            loss = self._calc_loss(output)
+            loss = self._calc_loss(input[0], output)
             loss.backward()
 
             for n, p in self.model.named_parameters():
@@ -91,18 +115,16 @@ class EWC(object):
         self.model.train()
         return precision_matrices
 
-    def _calc_loss(self, learner_outputs):
-        data = self.data
-        env_outputs = data["env_outputs"]
-        actor_outputs = data["actor_outputs"]
+    @staticmethod
+    def _calc_loss(env_outputs:dict, learner_outputs:dict):
         rewards = env_outputs["reward"] * FLAGS.reward_scale
         bootstrap_value = learner_outputs["baseline"][-1]
         discounts = (~env_outputs["done"]).float() * FLAGS.discounting
 
         vtrace_returns = vtrace.from_logits(
-            behavior_policy_logits=actor_outputs["policy_logits"],
+            behavior_policy_logits=learner_outputs["policy_logits"],
             target_policy_logits=learner_outputs["policy_logits"],
-            actions=actor_outputs["action"],
+            actions=learner_outputs["action"],
             discounts=discounts,
             rewards=rewards,
             values=learner_outputs["baseline"],
@@ -138,6 +160,7 @@ class TtyrecEnvPool:
         self.idx = 0
         self.env_pool_size = flags.ttyrec_envpool_size
         self.dataset = dataset.TtyrecDataset(flags.dataset, **dataset_kwargs)
+        # TODO: remove
         self.dataset._rootpath = "/home/mbortkie/repos/rl/dungeonsdata-neurips2022/experiment_code/nle/nld-bc"
         self.dataset.shuffle = True
         self.threadpool = dataset_kwargs["threadpool"]
@@ -737,8 +760,9 @@ def compute_gradients(data, learner_state, stats):
     total_loss = 0
 
     if EWC_INSTANCE is None:
+        assert not (FLAGS.supervised_loss or FLAGS.behavioural_clone), "There is something wrong with config"
         # It means that we do not load TTYREC
-        EWC_INSTANCE = EWC(model, data)
+        EWC_INSTANCE = EWC(model, use_ttyrec=False, data=data)
 
     if FLAGS.supervised_loss or FLAGS.behavioural_clone:
         ttyrec_data = TTYREC_ENVPOOL.result()
@@ -905,6 +929,7 @@ def compute_gradients(data, learner_state, stats):
         stats["kickstarting_coeff_bc"] += FLAGS.kickstarting_loss_bc
     if FLAGS.use_ewc:
         ewc_penalty = EWC_INSTANCE.penalty(model)
+        stats["ewc_loss"] += ewc_penalty
         total_loss += ewc_penalty * FLAGS.ewc_penalty_scaler
 
     total_loss.backward()
@@ -1211,15 +1236,7 @@ def main(cfg):
 
     if TTYREC_ENVPOOL is not None:
         global EWC_INSTANCE
-        ttyrec_data = TTYREC_ENVPOOL.result()
-        # idx = TTYREC_ENVPOOL.idx
-        ttyrec_data = TTYREC_ENVPOOL.result()
-        idx = TTYREC_ENVPOOL.idx
-        ttyrec_predictions, TTYREC_HIDDEN_STATE[idx] = model(
-            ttyrec_data, TTYREC_HIDDEN_STATE[idx]
-        )
-
-        EWC_INSTANCE = EWC(learner_state.model, TTYREC_ENVPOOL.result())
+        EWC_INSTANCE = EWC(learner_state.model, use_ttyrec=True)
 
     while not terminate:
         prev_now = now
