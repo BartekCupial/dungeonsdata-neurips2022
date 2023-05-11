@@ -10,7 +10,7 @@ config = {
     "exp_tags": [name],
     "connect":"0.0.0.0:4431",
     "exp_set": "2G",
-    "exp_point": "monk-APPO-AA-KS-BC",
+    "exp_point": "monk-APPO-AA-KS-BC-T",
     "num_actor_cpus": 20,
     "total_steps": 2_000_000_000,
     "ttyrec_batch_size": 256,
@@ -22,7 +22,7 @@ config = {
     'group': "monk-APPO-AA-BC",
     "character": "mon-hum-neu-mal",
     "use_checkpoint_actor": False,
-    "use_bc": True,
+    "use_kickstarting_bc": True,
     "kickstarting_path": "/net/tscratch/people/plgmostaszewski/dungeonsdata-neurips2022/experiment_code/monk-AA-BC/checkpoint.tar",
 }
 

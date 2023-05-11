@@ -786,7 +786,7 @@ def compute_gradients(data, learner_state, stats):
         stats["kickstarting_loss"] += kickstarting_loss.item()
         stats["kickstarting_coeff"] += FLAGS.kickstarting_loss
 
-    if FLAGS.use_bc:
+    if FLAGS.use_kickstarting_bc:
         ttyrec_data = TTYREC_ENVPOOL.result()
         idx = TTYREC_ENVPOOL.idx
         ttyrec_predictions, TTYREC_HIDDEN_STATE[idx] = model(
@@ -796,8 +796,8 @@ def compute_gradients(data, learner_state, stats):
             lambda t: t.detach(), TTYREC_HIDDEN_STATE[idx]
         )
 
-        student_logits = torch.flatten(ttyrec_predictions["policy_logits"], 0, 1)
-        teacher_logits = torch.flatten(ttyrec_predictions["kick_policy_logits"], 0, 1)
+        student_logits = ttyrec_predictions["policy_logits"]
+        teacher_logits = ttyrec_predictions["kick_policy_logits"]
 
         if FLAGS.log_kickstarting_bc:
             kickstarting_loss = compute_kickstarting_loss(
@@ -814,6 +814,7 @@ def compute_gradients(data, learner_state, stats):
 
         stats["bc_kickstarting_loss"] += kickstarting_loss.item()
         stats["bc_kickstarting_coeff"] += FLAGS.kickstarting_loss
+        
 
     total_loss.backward()
 
@@ -931,7 +932,7 @@ def main(cfg):
         num_batches=FLAGS.num_actor_batches,
     )
 
-    if FLAGS.use_kickstarting or FLAGS.use_bc:
+    if FLAGS.use_kickstarting or FLAGS.use_kickstarting_bc:
         student = hackrl.models.create_model(FLAGS, FLAGS.device)
         load_data = torch.load(FLAGS.kickstarting_path)
         t_flags = omegaconf.OmegaConf.create(load_data["flags"])
@@ -1016,6 +1017,8 @@ def main(cfg):
         "clipped_policy_fraction": StatMean(),
         "kickstarting_loss": StatMean(),
         "kickstarting_coeff": StatMean(),
+        "bc_kickstarting_loss": StatMean(),
+        "bc_kickstarting_coeff": StatMean(),
         "inverse_loss": StatMean(),
         "inverse_prediction_accuracy": StatMean(),
         "random_inverse_loss": StatMean(),
@@ -1068,7 +1071,7 @@ def main(cfg):
         logging.info("Optimising CuDNN kernels")
         torch.backends.cudnn.benchmark = True
 
-    if FLAGS.supervised_loss or FLAGS.behavioural_clone or FLAGS.use_bc:
+    if FLAGS.supervised_loss or FLAGS.behavioural_clone or FLAGS.use_kickstarting_bc:
         global TTYREC_ENVPOOL, TTYREC_HIDDEN_STATE
         tp = concurrent.futures.ThreadPoolExecutor(max_workers=FLAGS.ttyrec_cpus)
         TTYREC_HIDDEN_STATE = []
@@ -1111,7 +1114,7 @@ def main(cfg):
 
         steps = learner_state.global_stats["env_train_steps"].result()
         if not unfreezed and steps > FLAGS.unfreeze_actor_steps:
-            if FLAGS.use_kickstarting or FLAGS.use_bc:
+            if FLAGS.use_kickstarting or FLAGS.use_kickstarting_bc:
                 hackrl.models.unfreeze(model.student)
             else:
                 hackrl.models.unfreeze(model)
@@ -1122,7 +1125,7 @@ def main(cfg):
             break
 
         if FLAGS.wandb:
-            if FLAGS.use_kickstarting or FLAGS.use_bc:
+            if FLAGS.use_kickstarting or FLAGS.use_kickstarting_bc:
                 wandb.log({"debug/student_core_weight":model.student.core.weight_hh_l0.detach().cpu()[0,0] }, step=steps)
                 wandb.log({"debug/student_policy_weight":model.student.policy.weight.detach().cpu()[0,0] }, step=steps)
                 wandb.log({"debug/student_policy_weight":model.student.policy.weight.detach().cpu()[0,0] }, step=steps)
