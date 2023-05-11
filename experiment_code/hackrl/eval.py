@@ -1,5 +1,4 @@
 import argparse
-import subprocess
 
 from collections import deque
 from pathlib import Path
@@ -11,8 +10,6 @@ import torch
 import json
 import tqdm
 import wandb
-import shutil
-import tempfile
 import pandas as pd
 
 from nle import nethack
@@ -194,6 +191,137 @@ def generate_envpool_rollouts(
     return results
 
 
+def continue_envpool_rollouts(
+    envs,
+    model,
+    device="cuda",
+    rollouts=1024,
+    batch_size=512,
+    num_actor_batches=2,
+    pbar_idx=0,
+    score_target=10000,
+    eval_step_results = [None, None],
+):
+    # NB: We do NOT want to generate the first N rollouts from B batch
+    # of envs since this will bias short episodes.
+    # Instead lets just allocate some episodes to each env
+    split = rollouts // (batch_size * num_actor_batches)
+
+    rollouts_left = (
+        torch.ones(
+            (
+                num_actor_batches,
+                batch_size,
+            )
+        )
+        .long()
+        .to(device)
+        * split
+    )
+    rollouts_invalid = (
+        torch.ones(
+            (
+                num_actor_batches,
+                batch_size,
+            )
+        )
+        .long()
+        .to(device)
+    )
+    current_reward = torch.zeros(
+        (
+            num_actor_batches,
+            batch_size,
+        )
+    ).to(device)
+    timesteps = torch.zeros(
+        (
+            num_actor_batches,
+            batch_size,
+        )
+    ).to(device)
+
+    returns = []
+    scores = []
+    times = []
+    lens = []
+    grand_pbar = tqdm.tqdm(position=0, leave=True)
+    pbar = tqdm.tqdm(
+        total=batch_size * num_actor_batches * split, position=pbar_idx + 1, leave=True
+    )
+
+    action = torch.zeros((num_actor_batches, batch_size)).long().to(device)
+    hs = [model.initial_state(batch_size) for _ in range(num_actor_batches)]
+    hs = nest.map(lambda x: x.to(device), hs)
+
+    bl_scores = [deque(maxlen=2), deque(maxlen=2)]
+    bl_times = [deque(maxlen=2), deque(maxlen=2)]
+
+    totals = torch.sum(rollouts_left).item()
+    subtotals = [torch.sum(rollouts_left[i]).item() for i in range(num_actor_batches)]
+    while totals > 0:
+        grand_pbar.update(1)
+        for i in range(num_actor_batches):
+            if eval_step_results[i] is None:
+                eval_step_results[i] = envs.step(i, action[i])
+            outputs = eval_step_results[i].result()
+
+            env_outputs = nest.map(lambda t: t.to(device, copy=True), outputs)
+            env_outputs["prev_action"] = action[i]
+            current_reward += env_outputs["reward"]
+
+            bl_scores[i].append(env_outputs["blstats"][:, nethack.NLE_BL_SCORE])
+            bl_times[i].append(env_outputs["blstats"][:, nethack.NLE_BL_TIME])
+
+            env_outputs["timesteps"] = timesteps[i]
+            env_outputs["max_scores"] = (
+                torch.ones_like(env_outputs["timesteps"]) * score_target
+            ).float()
+            env_outputs["mask"] = torch.ones_like(env_outputs["timesteps"]).to(
+                torch.bool
+            )
+            env_outputs["scores"] = current_reward[i]
+
+            done_but_invalid = env_outputs["done"].int() * rollouts_invalid[i].bool().int()
+            done_and_valid = env_outputs["done"].int() * rollouts_left[i].bool().int() * torch.logical_not(rollouts_invalid[i].bool()).int()
+            finished = torch.sum(done_and_valid).item()
+            totals -= finished
+            subtotals[i] -= finished
+
+            for j in np.argwhere(done_and_valid.cpu().numpy()):
+                returns.append(current_reward[i][j[0]].item())
+                lens.append(int(env_outputs["timesteps"][j[0]]))
+                scores.append(bl_scores[i][-2][j[0]].item())
+                times.append(bl_times[i][-2][j[0]].item())
+
+            current_reward[i] *= 1 - env_outputs["done"].int()
+            timesteps[i] += 1
+            timesteps[i] *= 1 - env_outputs["done"].int()
+            rollouts_left[i] -= done_and_valid
+            rollouts_invalid[i] -= done_but_invalid
+            if finished:
+                pbar.update(finished)
+
+            env_outputs = nest.map(lambda x: x.unsqueeze(0), env_outputs)
+            with torch.no_grad():
+                outputs, hs[i] = model(env_outputs, hs[i])
+            action[i] = outputs["action"].reshape(-1)
+            eval_step_results[i] = envs.step(i, action[i])
+
+    data = {
+        "returns": returns,
+        "steps": lens,
+        "scores": scores,
+        "times": times,
+    }
+    return data, eval_step_results
+
+
+def evaluate_model(envs, model, eval_step_results, **kwargs):
+    data, eval_step_results = continue_envpool_rollouts(envs, model, eval_step_results=eval_step_results, **kwargs)
+    return results_to_dict(data), eval_step_results
+
+
 def evaluate_folder(path, device, **kwargs):
     model, flags, step = load_model_flags_and_step(path, device)
     returns = generate_envpool_rollouts(
@@ -304,32 +432,6 @@ def main(variant):
         json.dump(results_to_dict(results), file)
 
 
-def spawn_subprocess(temp_dir, **config):
-    tempfile.tempdir = temp_dir
-
-    arguments = [
-        item for key, value in config.items() for item in [f"--{key}", str(value)]
-    ]
-    cmd = ["python", "-m", "hackrl.eval"] + arguments
-    subprocess.run(cmd)
-
-
-def eval_subprocess(**config):
-    tempdir = tempfile.tempdir
-
-    # Create a temporary directory to store the files
-    temp_directory = tempfile.mkdtemp()
-
-    try:
-        # Spawn the subprocess with the custom temporary directory
-        spawn_subprocess(temp_directory, **config)
-
-        # Continue with any other operations related to the subprocess
-    finally:
-        # Remove the temporary directory and its contents
-        shutil.rmtree(temp_directory)
-
-    tempfile.tempdir = tempdir
 
 
 if __name__ == "__main__":
