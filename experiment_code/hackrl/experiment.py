@@ -94,8 +94,9 @@ class EWC(object):
 
             loss.backward()
 
-            for n, p in deepcopy(self.params).items():
-                precision_matrices[n].data += p.grad.data**2 / n_batches
+            for n, p in self.model.named_parameters():
+                if n in list(self.params.keys()):
+                    precision_matrices[n].data += p.grad.data**2 / n_batches
 
         precision_matrices = {n: p for n, p in precision_matrices.items()}
         self.model.zero_grad()
@@ -104,10 +105,9 @@ class EWC(object):
     def penalty(self, model: nn.Module):
         loss = 0
         for n, p in model.named_parameters():
-            if "baseline".casefold() not in n.casefold():
-                if n in list(self.params.keys()):
-                    _loss = self._precision_matrices[n] * (p - self._means[n]) ** 2
-                    loss += _loss.sum()
+            if n in list(self.params.keys()):
+                _loss = self._precision_matrices[n] * (p - self._means[n]) ** 2
+                loss += _loss.sum()
         return loss
 
 
