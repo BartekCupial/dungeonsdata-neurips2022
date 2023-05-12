@@ -118,6 +118,8 @@ kickstarting_decay: 1.0
 kickstarting_loss_bc: 1.0
 kickstarting_decay_bc: 1.0
 kickstarting_path: /net/pr2/projects/plgrid/plgggmum_crl/bcupial/monk-AA-BC/checkpoint.tar
+use_ewc: False
+ewc_penalty_scaler: 400
 log_forgetting: False
 forgetting_dataset: bc1
 
@@ -169,6 +171,3 @@ eval_checkpoint_every: 50_000_000
 eval_rollouts: 1024
 eval_batch_size: 256
 skip_first_eval: False
-
-use_ewc: True
-ewc_penalty_scaler: 400
