@@ -81,10 +81,16 @@ class EWC(object):
                 lambda t: t.detach(), TTYREC_HIDDEN_STATE[idx]
             )
 
-            true_a = torch.flatten(ttyrec_data["actions_converted"], 0, 1)
-            logits = torch.flatten(ttyrec_predictions["policy_logits"], 0, 1)
+            # TODO: refactor this
+            if True:
+                true_a = torch.flatten(ttyrec_data["actions_converted"], 0, 1)
+                logits = torch.flatten(ttyrec_predictions["policy_logits"], 0, 1)
+                loss = F.cross_entropy(logits[:-1], true_a[:-1]).mean()
+            else:
+                logits = torch.flatten(ttyrec_predictions["policy_logits"], 0, 1)
+                label = logits.max(1)[1].view(-1)
+                loss = F.nll_loss(F.log_softmax(logits, dim=1), label)
 
-            loss = F.cross_entropy(logits[:-1], true_a[:-1]).mean()
             loss.backward()
 
             for n, p in self.model.named_parameters():
