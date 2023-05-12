@@ -24,7 +24,7 @@ from nle.dataset import dataset
 from nle.dataset import db
 from nle.dataset import populate_db
 from copy import deepcopy
-
+from torch.nn import CrossEntropyLoss
 import hackrl.environment
 import hackrl.models
 
@@ -82,20 +82,20 @@ class EWC(object):
             )
 
             # TODO: refactor this
-            if True:
+            if False:
                 true_a = torch.flatten(ttyrec_data["actions_converted"], 0, 1)
                 logits = torch.flatten(ttyrec_predictions["policy_logits"], 0, 1)
                 loss = F.cross_entropy(logits[:-1], true_a[:-1]).mean()
             else:
                 logits = torch.flatten(ttyrec_predictions["policy_logits"], 0, 1)
-                label = logits.max(1)[1].view(-1)
-                loss = F.nll_loss(F.log_softmax(logits, dim=1), label)
+                logits = logits.float().requires_grad_()
+                label = logits.max(1)[1].view(-1).type(torch.LongTensor).cuda()
+                loss = CrossEntropyLoss()(logits, label)
 
             loss.backward()
 
-            for n, p in self.model.named_parameters():
-                if "baseline".casefold() not in n.casefold():
-                    precision_matrices[n].data += p.grad.data**2 / n_batches
+            for n, p in deepcopy(self.params).items():
+                precision_matrices[n].data += p.grad.data**2 / n_batches
 
         precision_matrices = {n: p for n, p in precision_matrices.items()}
         self.model.zero_grad()
@@ -105,8 +105,9 @@ class EWC(object):
         loss = 0
         for n, p in model.named_parameters():
             if "baseline".casefold() not in n.casefold():
-                _loss = self._precision_matrices[n] * (p - self._means[n]) ** 2
-                loss += _loss.sum()
+                if n in list(self.params.keys()):
+                    _loss = self._precision_matrices[n] * (p - self._means[n]) ** 2
+                    loss += _loss.sum()
         return loss
 
 
