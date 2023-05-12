@@ -1,4 +1,4 @@
-from random_word import RandomWords
+from random_words import RandomWords
 
 from mrunner.helpers.specification_helper import create_experiments_helper, get_combinations
 
@@ -25,11 +25,12 @@ config = {
 # params different between exps
 params_grid = [
     {
-        "seed":  list(range(5)),
+        "seed":  list(range(2)),
         # load from checkpoint
+        "ewc_penalty_scaler": [1, 400, 4000],
         "unfreeze_actor_steps": [0],
         "use_checkpoint_actor": [True],
-        "model_checkpoint_path": ["/net/pr2/projects/plgrid/plgg_pw_crl/mostaszewski/monk-AA-BC/checkpoint.tar"],
+        "model_checkpoint_path": ["/checkpoint/checkpoint.tar"],
     },
 ]
 
@@ -38,7 +39,7 @@ params_configurations = get_combinations(params_grid)
 final_grid = []
 for e, cfg in enumerate(params_configurations):
     cfg = {key: [value] for key, value in cfg.items()}
-    r = RandomWords().get_random_word()
+    r = RandomWords().random_word()
     cfg["group"] = [f"{name}_{e}_{r}"]
     final_grid.append(dict(cfg))
 
@@ -53,4 +54,5 @@ experiments_list = create_experiments_helper(
     exclude=["checkpoint"],
     base_config=config,
     params_grid=final_grid,
+    exclude_git_files=False,
 )
