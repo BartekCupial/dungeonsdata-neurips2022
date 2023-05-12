@@ -17,19 +17,19 @@ config = {
     "character": "mon-hum-neu-mal",
     "ttyrec_batch_size": 256,
     "use_ewc": True,
-    "dataset": "aa",
+    "dataset": "bc1",
     "freeze_from_the_beginning": False,
     "use_checkpoint_actor": True,
     "model_checkpoint_path": "/checkpoint/checkpoint.tar",
     "unfreeze_actor_steps": 0,
 }
 
-
 # params different between exps
 params_grid = [
     {
         "seed":  list(range(5)),
-        "ewc_penalty_scaler": [1, 400, 4000],
+        "ewc_penalty_scaler": [1, 400, 2000],
+        "ewc_n_batches": [10, 100]
     },
 ]
 
