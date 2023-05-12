@@ -10,8 +10,6 @@ import signal
 import socket
 import time
 from typing import Optional
-import torch.backends.cudnn as cudnn
-
 
 import coolname
 import hydra
@@ -25,7 +23,6 @@ import wandb
 from nle.dataset import dataset
 from nle.dataset import db
 from nle.dataset import populate_db
-from torch.autograd import Variable
 from copy import deepcopy
 
 import hackrl.environment
@@ -33,7 +30,6 @@ import hackrl.models
 
 from hackrl.utils.dataset_scores import get_dataset_scores
 from hackrl.utils.utils import set_seed
-from hackrl.eval import evaluate_model
 
 import render_utils
 from hackrl.core import nest
@@ -50,20 +46,9 @@ class EWC(object):
     def __init__(
         self,
         model: nn.Module,
-        use_ttyrec: bool = False,
-        data: Optional[dict] = None,
         n_batches: int = 10,
     ):
-
         self.model = model
-
-        if use_ttyrec:
-            self.use_ttyrec = True
-        else:
-            self.data = data
-            self.use_ttyrec = False
-
-        self._create_dataset(n_batches)
 
         self.params = {
             n: p
@@ -71,79 +56,44 @@ class EWC(object):
             if p.requires_grad and "baseline".casefold() not in n.casefold()
         }
         self._means = {}
-        self._precision_matrices = self._diag_fisher()
+        self._precision_matrices = self._diag_fisher(n_batches=n_batches)
 
         for n, p in copy.deepcopy(self.params).items():
             self._means[n] = p.data
 
-    def _create_dataset(self, n_batches: int=10):
-        if self.use_ttyrec:
-            global TTYREC_ENVPOOL, TTYREC_HIDDEN_STATE
-            self.dataset = []
-            for i in range(n_batches):
-                env_outputs = TTYREC_ENVPOOL.result()
-                idx = TTYREC_ENVPOOL.idx
-                initial_core_state = TTYREC_HIDDEN_STATE[idx]
-                self.dataset += [(env_outputs, initial_core_state)]
+    def _diag_fisher(self, n_batches: int = 10):
+        global TTYREC_ENVPOOL, TTYREC_HIDDEN_STATE
 
-        else:
-            env_outputs = self.data["env_outputs"]
-            initial_core_state = self.data["initial_core_state"]
-            self.dataset = [(env_outputs, initial_core_state)]
-
-    def _diag_fisher(self):
         precision_matrices = {}
         for n, p in deepcopy(self.params).items():
             p.data.zero_()
             precision_matrices[n] = p.data
 
-        self.model.eval()
-        cudnn.enabled = False
-
-        for input in self.dataset:
+        for _ in range(n_batches):
             self.model.zero_grad()
-            output, _ = self.model(input[0], input[1])
-            loss = self._calc_loss(input[0], output)
+
+            ttyrec_data = TTYREC_ENVPOOL.result()
+            idx = TTYREC_ENVPOOL.idx
+            ttyrec_predictions, TTYREC_HIDDEN_STATE[idx] = self.model(
+                ttyrec_data, TTYREC_HIDDEN_STATE[idx]
+            )
+            TTYREC_HIDDEN_STATE[idx] = nest.map(
+                lambda t: t.detach(), TTYREC_HIDDEN_STATE[idx]
+            )
+
+            true_a = torch.flatten(ttyrec_data["actions_converted"], 0, 1)
+            logits = torch.flatten(ttyrec_predictions["policy_logits"], 0, 1)
+
+            loss = F.cross_entropy(logits[:-1], true_a[:-1]).mean()
             loss.backward()
 
             for n, p in self.model.named_parameters():
                 if "baseline".casefold() not in n.casefold():
-                    precision_matrices[n].data += p.grad.data**2 / len(self.dataset)
+                    precision_matrices[n].data += p.grad.data**2 / n_batches
 
         precision_matrices = {n: p for n, p in precision_matrices.items()}
-        cudnn.enabled = True
-        self.model.train()
+        self.model.zero_grad()
         return precision_matrices
-
-    @staticmethod
-    def _calc_loss(env_outputs:dict, learner_outputs:dict):
-        rewards = env_outputs["reward"] * FLAGS.reward_scale
-        bootstrap_value = learner_outputs["baseline"][-1]
-        discounts = (~env_outputs["done"]).float() * FLAGS.discounting
-
-        vtrace_returns = vtrace.from_logits(
-            behavior_policy_logits=learner_outputs["policy_logits"],
-            target_policy_logits=learner_outputs["policy_logits"],
-            actions=learner_outputs["action"],
-            discounts=discounts,
-            rewards=rewards,
-            values=learner_outputs["baseline"],
-            bootstrap_value=bootstrap_value,
-        )
-
-        entropy_loss = FLAGS.entropy_cost * compute_entropy_loss(
-            learner_outputs["policy_logits"]
-        )
-
-        pg_loss = compute_policy_gradient_loss(
-            vtrace_returns.behavior_action_log_probs,
-            vtrace_returns.target_action_log_probs,
-            vtrace_returns.pg_advantages,
-            FLAGS.normalize_advantages,
-            FLAGS.appo_clip_policy,
-        )
-        total_loss = entropy_loss + pg_loss
-        return total_loss
 
     def penalty(self, model: nn.Module):
         loss = 0
@@ -160,8 +110,6 @@ class TtyrecEnvPool:
         self.idx = 0
         self.env_pool_size = flags.ttyrec_envpool_size
         self.dataset = dataset.TtyrecDataset(flags.dataset, **dataset_kwargs)
-        # TODO: remove
-        self.dataset._rootpath = "/home/mbortkie/repos/rl/dungeonsdata-neurips2022/experiment_code/nle/nld-bc"
         self.dataset.shuffle = True
         self.threadpool = dataset_kwargs["threadpool"]
         self.dataset_scores = dataset_scores
@@ -927,10 +875,11 @@ def compute_gradients(data, learner_state, stats):
 
         stats["kickstarting_loss_bc"] += kickstarting_loss_bc.item()
         stats["kickstarting_coeff_bc"] += FLAGS.kickstarting_loss_bc
+
     if FLAGS.use_ewc:
         ewc_penalty = EWC_INSTANCE.penalty(model)
-        stats["ewc_loss"] += ewc_penalty
         total_loss += ewc_penalty * FLAGS.ewc_penalty_scaler
+        stats["ewc_loss"] += ewc_penalty
 
     total_loss.backward()
 
@@ -1047,12 +996,6 @@ def main(cfg):
         batch_size=FLAGS.actor_batch_size,
         num_batches=FLAGS.num_actor_batches,
     )
-    eval_envs = moolib.EnvPool(
-        lambda: hackrl.environment.create_env(FLAGS),
-        num_processes=FLAGS.num_actor_cpus,
-        batch_size=FLAGS.eval_batch_size,
-        num_batches=FLAGS.num_actor_batches,
-    )
 
     if FLAGS.use_kickstarting or FLAGS.use_kickstarting_bc:
         student = hackrl.models.create_model(FLAGS, FLAGS.device)
@@ -1141,6 +1084,7 @@ def main(cfg):
         "kickstarting_coeff": StatMean(),
         "kickstarting_loss_bc": StatMean(),
         "kickstarting_coeff_bc": StatMean(),
+        "ewc_loss": StatMean(),
         "inverse_loss": StatMean(),
         "inverse_prediction_accuracy": StatMean(),
         "random_inverse_loss": StatMean(),
@@ -1157,8 +1101,7 @@ def main(cfg):
 
     checkpoint_path = os.path.join(FLAGS.savedir, "checkpoint.tar")
 
-    # if os.path.exists(checkpoint_path):
-    if False:
+    if os.path.exists(checkpoint_path):
         logging.info("Loading checkpoint: %s" % checkpoint_path)
         load_checkpoint(checkpoint_path, learner_state)
         accumulator.set_model_version(learner_state.model_version)
@@ -1194,7 +1137,7 @@ def main(cfg):
         logging.info("Optimising CuDNN kernels")
         torch.backends.cudnn.benchmark = True
 
-    if FLAGS.supervised_loss or FLAGS.behavioural_clone or FLAGS.use_kickstarting_bc:
+    if FLAGS.supervised_loss or FLAGS.behavioural_clone or FLAGS.use_kickstarting_bc or FLAGS.use_ewc:
         global TTYREC_ENVPOOL, TTYREC_HIDDEN_STATE
         tp = concurrent.futures.ThreadPoolExecutor(max_workers=FLAGS.ttyrec_cpus)
         TTYREC_HIDDEN_STATE = []
@@ -1231,12 +1174,10 @@ def main(cfg):
     is_connected = False
     unfreezed = False
     checkpoint_steps = -1
-    eval_steps = -1
-    eval_step_results = [None, None]
 
-    if TTYREC_ENVPOOL is not None:
+    if FLAGS.use_ewc:
         global EWC_INSTANCE
-        EWC_INSTANCE = EWC(learner_state.model, use_ttyrec=True)
+        EWC_INSTANCE = EWC(model)
 
     while not terminate:
         prev_now = now
@@ -1336,21 +1277,6 @@ def main(cfg):
                 )
                 checkpoint_steps = steps // FLAGS.checkpoint_save_every
 
-            # if (steps // FLAGS.eval_checkpoint_every > eval_steps) and not accumulator.has_gradients():
-            #     eval_kwargs = {
-            #         "rollouts": FLAGS.eval_rollouts,
-            #         "batch_size": FLAGS.eval_batch_size,
-            #         "device": FLAGS.device,
-            #         "score_target": score_target,
-            #         "num_actor_batches": FLAGS.num_actor_batches,
-            #     }
-            #
-            #     eval_results, eval_step_results = evaluate_model(eval_envs, model, eval_step_results=eval_step_results, **eval_kwargs)
-            #
-            #     if FLAGS.wandb:
-            #         wandb.log(eval_results, step=steps)
-            #
-            #     eval_steps = steps // FLAGS.eval_checkpoint_every
 
         if accumulator.has_gradients():
             gradient_stats = accumulator.get_gradient_stats()
@@ -1359,7 +1285,6 @@ def main(cfg):
             step_optimizer(learner_state, stats)
             accumulator.zero_gradients()
         elif not learn_batcher.empty() and accumulator.wants_gradients():
-        # elif not learn_batcher.empty():
             compute_gradients(learn_batcher.get(), learner_state, stats)
             accumulator.reduce_gradients(FLAGS.batch_size)
         else:
