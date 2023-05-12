@@ -1184,7 +1184,7 @@ def main(cfg):
 
     if FLAGS.use_ewc:
         global EWC_INSTANCE
-        EWC_INSTANCE = EWC(model)
+        EWC_INSTANCE = EWC(model, n_batches=FLAGS.ewc_n_batches)
 
     while not terminate:
         prev_now = now
