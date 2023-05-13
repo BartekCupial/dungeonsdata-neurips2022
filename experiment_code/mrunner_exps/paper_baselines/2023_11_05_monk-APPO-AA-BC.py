@@ -18,6 +18,14 @@ config = {
     "use_checkpoint_actor": False,
     "ttyrec_batch_size": 256,
     "supervised_loss": 0.1,
+
+    # watcher arguments
+    "eval_watcher": True,
+    "eval_rollouts": 1024,
+    "eval_batch_size": 256,
+    "eval_checkpoint_step": 100_000_000,
+    "eval_max_step": 2_000_000_000,
+    "eval_device": "cuda:0",
 }
 
 

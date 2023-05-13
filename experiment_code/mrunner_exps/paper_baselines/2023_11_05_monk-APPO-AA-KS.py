@@ -19,6 +19,14 @@ config = {
     "kickstarting_loss": 0.1,
     "use_kickstarting": True, 
     "kickstarting_path": "/net/pr2/projects/plgrid/plgg_pw_crl/mostaszewski/monk-AA-BC/checkpoint.tar",
+
+    # watcher arguments
+    "eval_watcher": True,
+    "eval_rollouts": 1024,
+    "eval_batch_size": 256,
+    "eval_checkpoint_step": 100_000_000,
+    "eval_max_step": 2_000_000_000,
+    "eval_device": "cuda:0",
 }
 
 

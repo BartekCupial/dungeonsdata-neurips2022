@@ -1119,6 +1119,7 @@ def main(cfg):
             raise NotImplementedError
     else:
         score_target = 100000
+        tp = None
 
     if FLAGS.log_forgetting:
         global FORGETTING_ENVPOOL, FORGETTING_HIDDEN_STATE
@@ -1131,6 +1132,8 @@ def main(cfg):
             )
             FORGETTING_HIDDEN_STATE.append(hs)
         FORGETTING_ENVPOOL = make_ttyrec_envpool(tp2, FLAGS.forgetting_dataset, FLAGS)
+    else:
+        tp2 = None
 
     # Run.
     now = time.time()
@@ -1302,7 +1305,12 @@ def main(cfg):
                 env_state.initial_core_state = prev_core_state
                 env_state.time_batcher.stack(last_data)
     if is_connected and is_leader:
-        save_checkpoint(checkpoint_path, learner_state)
+        save_checkpoint(                
+            os.path.join(
+                FLAGS.savedir, "checkpoint_v%d" % ((steps // FLAGS.checkpoint_save_every) * FLAGS.checkpoint_save_every)
+            ), 
+            learner_state
+        )
     if tp:
         tp.shutdown()
     if tp2:
