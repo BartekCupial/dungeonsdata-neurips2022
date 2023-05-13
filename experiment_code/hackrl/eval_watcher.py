@@ -72,10 +72,10 @@ def match_pattern(file, pattern, step):
 def main(variant):
     global ENVS
    
+    print("Watcher listening...")
     try: 
         processed = []
         while True:
-            print("Watcher listening...")
             time.sleep(0.25)
             
             checkpoint_path = scan_checkpoints(variant["checkpoint_dir"], processed, variant["checkpoint_step"])

@@ -19,14 +19,6 @@ config = {
     "behavioural_clone": True,
     'group': "monk-AA-BC",
     "character": "mon-hum-neu-mal",
-
-    # watcher arguments
-    "eval_watcher": True,
-    "eval_rollouts": 1024,
-    "eval_batch_size": 256,
-    "eval_checkpoint_step": 100_000_000,
-    "eval_max_step": 2_000_000_000,
-    "eval_device": "cuda:0",
 }
 
 
