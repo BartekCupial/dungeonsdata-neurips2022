@@ -12,6 +12,7 @@ import time
 import tempfile
 import shutil
 from typing import Optional
+from collections import deque
 
 import coolname
 import hydra
@@ -704,7 +705,7 @@ def create_scheduler(optimizer):
     return torch.optim.lr_scheduler.LambdaLR(optimizer, lambda steps: min((steps + 1) / FLAGS.warmup_steps, 1))
 
 
-def compute_gradients(data, learner_state, stats):
+def compute_gradients(data, sleep_data, learner_state, stats):
     global TTYREC_ENVPOOL, TTYREC_HIDDEN_STATE, EWC_INSTANCE, FORGETTING_ENVPOOL, FORGETTING_HIDDEN_STATE
     model = learner_state.model
 
@@ -805,12 +806,14 @@ def compute_gradients(data, learner_state, stats):
     #     rewards /= model.get_running_std()
 
     discounts = (~env_outputs["done"]).float() * FLAGS.discounting
+    lambdas = (~env_outputs["done"]).float() * FLAGS.lambda_gae
 
     vtrace_returns = vtrace.from_logits(
         behavior_policy_logits=actor_outputs["policy_logits"],
         target_policy_logits=learner_outputs["policy_logits"],
         actions=actor_outputs["action"],
         discounts=discounts,
+        lambdas=lambdas,
         rewards=rewards,
         values=learner_outputs["baseline"],
         bootstrap_value=bootstrap_value,
@@ -838,6 +841,59 @@ def compute_gradients(data, learner_state, stats):
     )
 
     total_loss += entropy_loss + pg_loss + baseline_loss
+
+    if FLAGS.ppg_sleep:
+        for batch_idx in np.random.randint(len(sleep_data), size=FLAGS.ppg_sleep_cycles):
+            sleep_batch = sleep_data[batch_idx]
+
+            sleep_env_outputs = sleep_batch["env_outputs"]
+            sleep_initial_core_state = sleep_batch["initial_core_state"]
+
+            sleep_learner_outputs, _ = model(sleep_env_outputs, sleep_initial_core_state)
+            sleep_actor_outputs = sleep_batch["actor_outputs"]
+
+
+            sleep_rewards = sleep_env_outputs["reward"] * FLAGS.reward_scale
+            if FLAGS.rms_reward_norm:
+                reward_std = stats["mean_square_discounted_running_reward"].mean() ** 0.5
+                sleep_rewards /= max(0.01, reward_std)
+            if FLAGS.reward_clip:
+                sleep_rewards = torch.clip(sleep_rewards, -FLAGS.reward_clip, FLAGS.reward_clip)
+
+            sleep_discounts = (~sleep_env_outputs["done"]).float() * FLAGS.discounting
+            sleep_lambdas = (~sleep_env_outputs["done"]).float() * FLAGS.lambda_gae
+
+            # Use last baseline value (from the value function) to bootstrap.
+            sleep_bootstrap_value = sleep_learner_outputs["baseline"][-1]
+
+            sleep_vtrace_returns = vtrace.from_logits(
+                # we pass actor_outputs["policy_logits"] in both places to remove vtrace and only compute VALUES
+                behavior_policy_logits=sleep_actor_outputs["policy_logits"],
+                target_policy_logits=sleep_actor_outputs["policy_logits"],
+                actions=sleep_actor_outputs["action"],
+                discounts=sleep_discounts,
+                lambdas=sleep_lambdas,
+                rewards=sleep_rewards,
+                values=sleep_learner_outputs["baseline"],
+                bootstrap_value=sleep_bootstrap_value,
+            )
+
+            ppg_kl_loss = FLAGS.ppg_kl_loss * compute_kickstarting_loss(
+                sleep_learner_outputs["policy_logits"],
+                sleep_actor_outputs["policy_logits"]
+            )
+
+            ppg_baseline_loss = FLAGS.ppg_baseline_cost * compute_baseline_loss(
+                sleep_actor_outputs["baseline"],
+                sleep_learner_outputs["baseline"],
+                sleep_vtrace_returns.vs,
+                FLAGS.appo_clip_baseline,
+            )
+
+            total_loss += ppg_kl_loss
+            total_loss += ppg_baseline_loss
+            stats["ppg_kl_loss"] += ppg_kl_loss.item()
+            stats["ppg_baseline_loss"] += ppg_baseline_loss.item()
 
     if FLAGS.use_inverse_model:
         inverse_loss = FLAGS.inverse_loss * compute_inverse_loss(
@@ -1088,6 +1144,7 @@ def main(cfg):
     accumulator.set_virtual_batch_size(FLAGS.virtual_batch_size)
 
     learn_batcher = moolib.Batcher(FLAGS.batch_size, FLAGS.device, dim=1)
+    sleep_learn_batcher = deque(maxlen=FLAGS.ppg_sleep_sample_reuse)
 
     stats = {
         "mean_episode_return": StatMean(),
@@ -1123,6 +1180,8 @@ def main(cfg):
         "kickstarting_coeff_bc": StatMean(),
         "ewc_loss": StatMean(),
         "forgetting_loss": StatMean(),
+        "ppg_kl_loss": StatMean(),
+        "ppg_baseline_loss": StatMean(),
         "inverse_loss": StatMean(),
         "inverse_prediction_accuracy": StatMean(),
         "random_inverse_loss": StatMean(),
@@ -1337,7 +1396,9 @@ def main(cfg):
             step_optimizer(learner_state, stats)
             accumulator.zero_gradients()
         elif not learn_batcher.empty() and accumulator.wants_gradients():
-            compute_gradients(learn_batcher.get(), learner_state, stats)
+            learn_batch = learn_batcher.get()
+            sleep_learn_batcher.append(learn_batch)
+            compute_gradients(learn_batch, sleep_learn_batcher, learner_state, stats)
             accumulator.reduce_gradients(FLAGS.batch_size)
         else:
             if accumulator.wants_gradients():

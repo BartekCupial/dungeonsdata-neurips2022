@@ -44,6 +44,7 @@ connect: 0.0.0.0:4431
 crop_dim: 18
 device: "cuda:0"
 discounting: 0.999
+lambda_gae: 1.0 # 1.0 the same as without gae, set between 0 < lambda < 1, comprimise between bias and variance
 entity: gmum
 entropy_cost: 0.001
 env:
@@ -123,6 +124,13 @@ ewc_penalty_scaler: 400
 ewc_n_batches: 10
 log_forgetting: False
 forgetting_dataset: bc1
+
+# PPG loss update
+ppg_sleep: False
+ppg_kl_loss: 1.0
+ppg_sleep_sample_reuse: 6
+ppg_sleep_cycles: 2
+ppg_baseline_cost: 1.0 # normally 0.5 for value_fn and 0.5 for aux_value_fn but we keep only one
 
 use_tty_only: true  # Use only tty observations. 'False' ~ 10% faster & higher score
 use_prev_action: true
