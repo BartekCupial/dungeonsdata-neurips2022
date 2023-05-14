@@ -30,6 +30,7 @@ def load_model_flags_and_step(path, device):
     load_data = torch.load(path, map_location=torch.device(device))
     flags = omegaconf.OmegaConf.create(load_data["flags"])
     flags.device = device
+    flags.use_checkpoint_actor = False
     model = hackrl.models.create_model(flags, device)
     step = load_data["learner_state"]["global_stats"]["steps_done"]["value"]
 
