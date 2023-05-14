@@ -212,9 +212,9 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
                 mask[x, :, :y, :y] = 1
 
                 # reset state if episode finished
-                init_state = self.initial_state(K=OT)
+                init_state = self.initial_state(K=y)
                 init_state = nest.map(torch.squeeze, init_state)
-                nest.slice(inputs, (slice(None), x), init_state)
+                nest.slice(inputs, (slice(None, y), x), init_state)
             causal_mask *= mask
 
         core_output = self.core(
