@@ -122,6 +122,13 @@ kickstarting_path: /net/pr2/projects/plgrid/plgggmum_crl/bcupial/monk-AA-BC/chec
 log_forgetting: False
 forgetting_dataset: bc1
 
+# PPG loss update
+ppg_sleep: False
+ppg_kl_loss: 1.0
+ppg_sleep_sample_reuse: 6
+ppg_sleep_cycles: 2
+ppg_baseline_cost: 1.0 # normally 0.5 for value_fn and 0.5 for aux_value_fn but we keep only one
+
 use_tty_only: true  # Use only tty observations. 'False' ~ 10% faster & higher score
 use_prev_action: true
 use_inverse_model: false
