@@ -619,32 +619,13 @@ def compute_inverse_loss(predicted_action_logits, actions):
 
 
 def create_optimizer(model):
-    if FLAGS.baseline_learning_rate:
-        baseline_params = model.baseline.parameters()
-
-        other_params = []
-        for name, param in model.named_parameters():
-            if not name.startswith('baseline'):
-                other_params.append(param)
-
-        return torch.optim.AdamW([
-                {'params': other_params, 'lr': FLAGS.adam_learning_rate},
-                {'params': baseline_params, 'lr': FLAGS.baseline_learning_rate},
-            ],  
-            lr=FLAGS.adam_learning_rate,
-            betas=(FLAGS.adam_beta1, FLAGS.adam_beta2),
-            eps=FLAGS.adam_eps,
-            weight_decay=FLAGS.weight_decay,
-        )
-
-    else:
-        return torch.optim.AdamW(
-            model.parameters(),
-            lr=FLAGS.adam_learning_rate,
-            betas=(FLAGS.adam_beta1, FLAGS.adam_beta2),
-            eps=FLAGS.adam_eps,
-            weight_decay=FLAGS.weight_decay,
-        )
+    return torch.optim.AdamW(
+        model.parameters(),
+        lr=FLAGS.adam_learning_rate,
+        betas=(FLAGS.adam_beta1, FLAGS.adam_beta2),
+        eps=FLAGS.adam_eps,
+        weight_decay=FLAGS.weight_decay,
+    )
 
 
 def create_scheduler(optimizer):
