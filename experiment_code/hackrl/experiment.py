@@ -823,6 +823,7 @@ def compute_gradients(data, sleep_data, learner_state, stats):
         learner_outputs["policy_logits"], stats
     )
 
+    # TODO: should we add ewc_penalty to this loss?
     pg_loss = compute_policy_gradient_loss(
         vtrace_returns.behavior_action_log_probs,
         vtrace_returns.target_action_log_probs,
