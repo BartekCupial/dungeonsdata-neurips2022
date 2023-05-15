@@ -18,19 +18,10 @@ from hackrl.eval import load_model_flags_and_step
 from hackrl.experiment import make_ttyrec_envpool, compute_kickstarting_loss
 
 
-def log_forgetting(model, flags, forgetting_dataset, n_batches=2000, log_to_wandb=False):
+def log_forgetting(model, n_batches=2000, log_to_wandb=False):
     model.eval()
 
     global FORGETTING_ENVPOOL, FORGETTING_HIDDEN_STATE
-    tp2 = concurrent.futures.ThreadPoolExecutor(max_workers=flags.ttyrec_cpus)
-    FORGETTING_HIDDEN_STATE = []
-    for _ in range(flags.ttyrec_envpool_size):
-        hs = nest.map(
-            lambda x: x.to(flags.device),
-            model.initial_state(batch_size=flags.ttyrec_batch_size),
-        )
-        FORGETTING_HIDDEN_STATE.append(hs)
-    FORGETTING_ENVPOOL = make_ttyrec_envpool(tp2, forgetting_dataset, flags)
 
     forgetting_losses = []
     for i in tqdm(range(n_batches)):
@@ -54,8 +45,6 @@ def log_forgetting(model, flags, forgetting_dataset, n_batches=2000, log_to_wand
 
         if log_to_wandb:
             wandb.log({"forgetting_losses": forgetting_loss.item()})
-
-    tp2.shutdown()
 
     forgetting_losses = np.array(forgetting_losses)
 
@@ -112,6 +101,8 @@ def main(variant):
         step = load_data["learner_state"]["global_stats"]["steps_done"]["value"]
         checkpoints[step] = checkpoint_tar
 
+    first = True
+
     # sort checkpoints, we need to process them from oldest due to wandb
     for step, checkpoint in sorted(checkpoints.items()):
         print(f"Evaluating checkpoint {checkpoint}")
@@ -132,11 +123,27 @@ def main(variant):
 
         flags.dbfilename = variant["dbfilename"]
         flags.ttyrec_batch_size = variant["batch_size"]
-        results = log_forgetting(model, flags, variant["forgetting_dataset"], variant["n_batches"], log_to_wandb)
+
+        if first:
+            global FORGETTING_ENVPOOL, FORGETTING_HIDDEN_STATE
+            tp2 = concurrent.futures.ThreadPoolExecutor(max_workers=flags.ttyrec_cpus)
+            FORGETTING_HIDDEN_STATE = []
+            for _ in range(flags.ttyrec_envpool_size):
+                hs = nest.map(
+                    lambda x: x.to(flags.device),
+                    model.initial_state(batch_size=flags.ttyrec_batch_size),
+                )
+                FORGETTING_HIDDEN_STATE.append(hs)
+            FORGETTING_ENVPOOL = make_ttyrec_envpool(tp2, variant["forgetting_dataset"], flags)
+            first = False
+
+        results = log_forgetting(model, variant["n_batches"], log_to_wandb)
         results["global/env_train_steps"] = step
 
         if log_to_wandb:
             wandb.log(results)
+
+    tp2.shutdown()
 
 
 if __name__ == "__main__":

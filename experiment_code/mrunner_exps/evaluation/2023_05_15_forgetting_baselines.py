@@ -34,7 +34,7 @@ config = {
     "wandb": True,
     "checkpoint_dir": "/path/to/checkpoint/dir",
     "batch_size": 256,
-    "n_batches": 2**8,
+    "n_batches": 2**10,
 }
 config = combine_config_with_defaults(config)
 
@@ -49,15 +49,15 @@ appo_aa_kl_t = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12
 params_grid = [
     {
         "checkpoint_dir": get_checkpoint_paths(appo_t),
-        "forgetting_dataset": ["appo-t"],
+        "forgetting_dataset": ["bc1"],
     },
-    # {
-    #     "checkpoint_dir": get_checkpoint_paths(appo_aa_ks_t),
-    #     "forgetting_dataset": ["appo-ks-t"],
-    # },
+    {
+        "checkpoint_dir": get_checkpoint_paths(appo_aa_ks_t),
+        "forgetting_dataset": ["bc1"],
+    },
     {
         "checkpoint_dir": get_checkpoint_paths(appo_aa_kl_t),
-        "forgetting_dataset": ["appo-kl-t"],
+        "forgetting_dataset": ["bc1"],
     },
 ]
 
