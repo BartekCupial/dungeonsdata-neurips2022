@@ -7,6 +7,8 @@ import json
 
 from pathlib import Path
 
+import numpy as np
+
 api = wandb.Api()
 
 
@@ -35,6 +37,13 @@ def create_dataframe(filters):
         for key, value in ast.literal_eval(run.summary.__repr__()).items():
             if isinstance(value, numbers.Number):
                 df[key] = value
+            elif isinstance(value, list):
+                if key == "returns":
+                    key = "return"
+                
+                df[f"eval/mean_episode_{key}"] = np.mean(value)
+                df[f"eval/std_episode_{key}"] = np.std(value)
+                df[f"eval/median_episode_{key}"] = np.median(value)
 
         df["group"] = run.config["group"]
         data.append(df)
@@ -56,6 +65,7 @@ def log_group(group, df, config):
 
     for index, row in df.iterrows():
         logs = row.to_dict()
+        logs["global/env_train_steps"] = logs["_step"]
         del logs["group"]
         wandb.log(logs, step=logs["_step"])
 
