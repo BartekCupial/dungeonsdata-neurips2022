@@ -29,7 +29,39 @@ os.environ["MOOLIB_ALLOW_FORK"] = "1"
 ENVS = None
 
 
-def load_model_flags_and_step(path, device):
+# def load_model_flags_and_step(path, device):
+#     load_data = torch.load(path, map_location=torch.device(device))
+#     flags = omegaconf.OmegaConf.create(load_data["flags"])
+#     flags.device = device
+#     flags.use_checkpoint_actor = False
+#     model = hackrl.models.create_model(flags, device)
+#     step = load_data["learner_state"]["global_stats"]["steps_done"]["value"]
+
+#     if (
+#         flags.use_kickstarting
+#         or flags.get("use_kickstarting_bc")
+#         or flags.get("log_forgetting")
+#     ):
+#         print("Kickstarting")
+#         # remove teacher weights
+#         student_params = dict(
+#             filter(
+#                 lambda x: x[0].startswith("student"),
+#                 load_data["learner_state"]["model"].items(),
+#             )
+#         )
+#         # modify keys
+#         student_params = dict(
+#             map(lambda x: (x[0].removeprefix("student."), x[1]), student_params.items())
+#         )
+#         model.load_state_dict(student_params)
+#         return model, flags, step
+
+#     model.load_state_dict(load_data["learner_state"]["model"])
+#     return model, flags, step
+
+
+def load_model_flags_and_step(path, teacher_path=None, device="cpu"):
     load_data = torch.load(path, map_location=torch.device(device))
     flags = omegaconf.OmegaConf.create(load_data["flags"])
     flags.device = device
@@ -37,26 +69,18 @@ def load_model_flags_and_step(path, device):
     model = hackrl.models.create_model(flags, device)
     step = load_data["learner_state"]["global_stats"]["steps_done"]["value"]
 
-    if (
-        flags.use_kickstarting
-        or flags.get("use_kickstarting_bc")
-        or flags.get("log_forgetting")
-    ):
+    if flags.use_kickstarting:
         print("Kickstarting")
-        # remove teacher weights
-        student_params = dict(
-            filter(
-                lambda x: x[0].startswith("student"),
-                load_data["learner_state"]["model"].items(),
-            )
+        if teacher_path:
+            flags.kickstarting_path = teacher_path
+        t_data = torch.load(flags.kickstarting_path)
+        t_flags = omegaconf.OmegaConf.create(t_data["flags"])
+        t_flags.use_checkpoint_actor = False
+        teacher = hackrl.models.create_model(t_flags, flags.device)
+        # teacher.load_state_dict(load_data["learner_state"]["model"])
+        model = hackrl.models.KickStarter(
+            model, teacher, run_teacher_hs=flags.run_teacher_hs
         )
-        # modify keys
-        student_params = dict(
-            map(lambda x: (x[0].removeprefix("student."), x[1]), student_params.items())
-        )
-        model.load_state_dict(student_params)
-        return model, flags, step
-
     model.load_state_dict(load_data["learner_state"]["model"])
     return model, flags, step
 
