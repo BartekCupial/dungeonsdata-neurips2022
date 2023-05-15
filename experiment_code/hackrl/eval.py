@@ -2,6 +2,7 @@ import argparse
 import shutil
 import tempfile
 import logging
+import os
 
 from collections import deque
 from pathlib import Path
@@ -23,6 +24,8 @@ import hackrl.models
 from hackrl.core import nest
 import matplotlib.pyplot as plt
 
+os.environ["MOOLIB_ALLOW_FORK"] = "1"
+
 ENVS = None
 
 
@@ -30,6 +33,7 @@ def load_model_flags_and_step(path, device):
     load_data = torch.load(path, map_location=torch.device(device))
     flags = omegaconf.OmegaConf.create(load_data["flags"])
     flags.device = device
+    flags.use_checkpoint_actor = False
     model = hackrl.models.create_model(flags, device)
     step = load_data["learner_state"]["global_stats"]["steps_done"]["value"]
 
@@ -345,7 +349,7 @@ def evaluate_folder(path, device, **kwargs):
         flags=flags,
         **kwargs,
     )
-    return returns, flags, step
+    return results_to_dict(returns), flags, step
 
 
 def results_to_dict(results):
@@ -417,10 +421,12 @@ def main(variant):
             entity="gmum",
             name=name,
         )
+
+        results["global/env_train_steps"] = step
         wandb.log(results, step=step)
 
     with open(variant["results_path"], "w") as file:
-        json.dump(results_to_dict(results), file)
+        json.dump(results, file)
 
 
 if __name__ == "__main__":
