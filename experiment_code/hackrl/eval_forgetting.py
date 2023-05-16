@@ -107,7 +107,7 @@ def main(variant):
     for step, checkpoint in sorted(checkpoints.items()):
         print(f"Evaluating checkpoint {checkpoint}")
 
-        model, flags, step = load_model_flags_and_step(checkpoint, variant["teacher_path"], variant["device"])
+        model, flags, step = load_model_flags_and_step(checkpoint, variant["device"], variant["teacher_path"])
 
         if wandb.run is None and log_to_wandb:
             config = omegaconf.OmegaConf.to_container(flags)

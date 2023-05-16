@@ -61,7 +61,7 @@ ENVS = None
 #     return model, flags, step
 
 
-def load_model_flags_and_step(path, teacher_path=None, device="cpu"):
+def load_model_flags_and_step(path, device="cpu", teacher_path=None):
     load_data = torch.load(path, map_location=torch.device(device))
     flags = omegaconf.OmegaConf.create(load_data["flags"])
     flags.device = device
