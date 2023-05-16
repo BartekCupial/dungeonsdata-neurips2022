@@ -27,6 +27,16 @@ params_grid = [
     {
         "seed":  list(range(5)),
         "kickstarting_loss": [0.5],
+        "entropy_cost": [0.0],
+        # load from checkpoint
+        "unfreeze_actor_steps": [0],
+        "use_checkpoint_actor": [True],
+        "model_checkpoint_path": ["/net/pr2/projects/plgrid/plgg_pw_crl/mostaszewski/monk-AA-BC/checkpoint.tar"],
+        "kickstarting_decay": [0.9999, 0.99996, 0.99998],
+    },
+    {
+        "seed":  list(range(5)),
+        "kickstarting_loss": [0.5],
         # load from checkpoint
         "unfreeze_actor_steps": [0],
         "use_checkpoint_actor": [True],
