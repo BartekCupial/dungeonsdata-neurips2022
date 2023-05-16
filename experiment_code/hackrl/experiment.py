@@ -51,12 +51,18 @@ class EWC(object):
         model: nn.Module,
         n_batches: int = 10,
     ):
+        # To make sure we do not interfere with the main training
+        self.training = model.training
+
         self.model = model
+        self.model.train(mode=True)
 
         self.params = {
             n: p
             for n, p in self.model.named_parameters()
-            if p.requires_grad and "baseline".casefold() not in n.casefold()
+            if p.requires_grad
+            and "baseline".casefold() not in n.casefold()
+            and "teacher" not in n.casefold()
         }
         self._means = {}
         self._precision_matrices = self._diag_fisher(n_batches=n_batches)
@@ -84,17 +90,10 @@ class EWC(object):
                 lambda t: t.detach(), TTYREC_HIDDEN_STATE[idx]
             )
 
-            # TODO: refactor this
-            if False:
-                true_a = torch.flatten(ttyrec_data["actions_converted"], 0, 1)
-                logits = torch.flatten(ttyrec_predictions["policy_logits"], 0, 1)
-                loss = F.cross_entropy(logits[:-1], true_a[:-1]).mean()
-            else:
-                logits = torch.flatten(ttyrec_predictions["policy_logits"], 0, 1)
-                logits = logits.float().requires_grad_()
-                label = logits.max(1)[1].view(-1).type(torch.LongTensor).cuda()
-                loss = CrossEntropyLoss()(logits, label)
-
+            logits = torch.flatten(ttyrec_predictions["policy_logits"], 0, 1)
+            logits = logits.float().requires_grad_()
+            label = logits.max(1)[1].view(-1).type(torch.LongTensor).cuda()
+            loss = CrossEntropyLoss()(logits, label)
             loss.backward()
 
             for n, p in self.model.named_parameters():
@@ -103,6 +102,8 @@ class EWC(object):
 
         precision_matrices = {n: p for n, p in precision_matrices.items()}
         self.model.zero_grad()
+
+        self.model.train(mode=self.training)
         return precision_matrices
 
     def penalty(self, model: nn.Module):
@@ -112,7 +113,6 @@ class EWC(object):
                 _loss = self._precision_matrices[n] * (p - self._means[n]) ** 2
                 loss += _loss.sum()
         return loss
-
 
 
 class TtyrecEnvPool:
@@ -720,7 +720,7 @@ def compute_gradients(data, sleep_data, learner_state, stats):
     if EWC_INSTANCE is None:
         assert not (FLAGS.supervised_loss or FLAGS.behavioural_clone), "There is something wrong with config"
         # It means that we do not load TTYREC
-        EWC_INSTANCE = EWC(model, use_ttyrec=False, data=data)
+        EWC_INSTANCE = EWC(model)
 
     if FLAGS.supervised_loss or FLAGS.behavioural_clone:
         ttyrec_data = TTYREC_ENVPOOL.result()
