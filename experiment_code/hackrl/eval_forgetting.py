@@ -18,6 +18,7 @@ from hackrl.eval import load_model_flags_and_step
 from hackrl.experiment import make_ttyrec_envpool, compute_kickstarting_loss
 
 
+@torch.no_grad()
 def log_forgetting(model, n_batches=2000, log_to_wandb=False):
     model.eval()
 
@@ -41,7 +42,7 @@ def log_forgetting(model, n_batches=2000, log_to_wandb=False):
         forgetting_losses.append(forgetting_loss.item())
         
         # Only call step when you are done with ttyrec_data - it may get overwritten
-        FORGETTING_ENVPOOL.step()
+        # FORGETTING_ENVPOOL.step()
 
         if log_to_wandb:
             wandb.log({"forgetting_losses": forgetting_loss.item()})

@@ -236,7 +236,7 @@ def make_ttyrec_envpool(threadpool, dataset_name, flags):
         populate_db.add_nledata_directory(aa_path, "autoascend", dbfilename)
         populate_db.add_altorg_directory(alt_path, "altorg", dbfilename)
 
-    dataset_scores = get_dataset_scores(flags.dataset, dbfilename)
+    dataset_scores = get_dataset_scores(dataset_name, dbfilename)
 
     kwargs = dict(
         batch_size=flags.ttyrec_batch_size,
@@ -256,8 +256,8 @@ def make_ttyrec_envpool(threadpool, dataset_name, flags):
         subselect.append(" points>10000")
     if flags.dataset_midscore:
         subselect.append(" points>1000 AND points<10000")
-    if flags.dataset_deep:
-        subselect.append(" maxlvl>1")
+    # if flags.dataset_deep:
+    #     subselect.append(" maxlvl>1")
 
     if subselect:
         kwargs["subselect_sql"] = "SELECT gameid FROM games WHERE " + "AND".join(

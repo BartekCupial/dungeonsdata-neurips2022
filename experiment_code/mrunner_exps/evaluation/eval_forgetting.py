@@ -43,7 +43,6 @@ config = combine_config_with_defaults(config)
 # params different between exps
 params_grid = [
     {
-        "rollouts": [16],
         "batch_size": [4],
         "checkpoint_dir": ["/home/bartek/Workspace/data/nethack_checkpoints/monk-AA-KS"],
         "teacher_path": ["/home/bartek/Workspace/data/nethack_checkpoints/monk-AA-BC/checkpoint.tar"],
