@@ -15,7 +15,7 @@ config = {
     "total_steps": 2_000_000_000,
     "group": "monk-APPO",
     "character": "mon-hum-neu-mal",
-    "use_checkpoint_actor": False
+    "use_checkpoint_actor": False,
 }
 
 
