@@ -25,13 +25,13 @@ config = {
 # params different between exps
 params_grid = [
     {
-        "seed":  list(range(5)),
+        "seed":  list(range(6)),
         # load from checkpoint
         "unfreeze_actor_steps": [0],
         "use_checkpoint_actor": [True],
         "model_checkpoint_path": ["/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/10_05-09_22-awesome_heisenberg/monk-aa-bc-deep_hp0i_5/checkpoint/hackrl/nle/monk-AA-BC_deep_5/checkpoint.tar"],
         # log forgetting
-        "log_forgetting": [True],
+        "log_forgetting": [False],
         "forgetting_dataset": ["bc_midscore"],
         "kickstarting_path": ["/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/10_05-09_22-awesome_heisenberg/monk-aa-bc-deep_hp0i_5/checkpoint/hackrl/nle/monk-AA-BC_deep_5/checkpoint.tar"],
     },

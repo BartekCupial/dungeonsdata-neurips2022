@@ -1090,6 +1090,7 @@ def main(cfg):
         FLAGS.use_checkpoint_actor = False
 
     if FLAGS.use_kickstarting or FLAGS.use_kickstarting_bc or FLAGS.log_forgetting:
+        assert FLAGS.use_ewc==False, "Cannot use EWC with log forgetting, there is a problem with 'grads shrank'"
         student = hackrl.models.create_model(FLAGS, FLAGS.device)
         load_data = torch.load(FLAGS.kickstarting_path)
         t_flags = omegaconf.OmegaConf.create(load_data["flags"])
