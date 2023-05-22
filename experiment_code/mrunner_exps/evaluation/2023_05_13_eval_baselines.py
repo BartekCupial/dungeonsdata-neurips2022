@@ -50,6 +50,8 @@ appo_aa_bc_t = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12
 aa_bc_deep = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/10_05-09_22-awesome_heisenberg")
 appo_aa_ks_sweep_small = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/18_05-08_32-stupefied_beaver")
 appo_aa_ks_sweep_decay = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/19_05-15_27-gifted_hugle")
+appo_aa_ewc = Path("/net/pr2/projects/plgrid/plgg_pw_crl/mbortkiewicz/mrunner_scratch/nle/20_05-17_34-cranky_mayer")
+appo_aa_ewc2 = Path("/net/pr2/projects/plgrid/plgg_pw_crl/mbortkiewicz/mrunner_scratch/nle/21_05-14_00-silly_lumiere")
 
 
 # params different between exps
@@ -63,7 +65,10 @@ params_grid = [
     # {"checkpoint_dir": get_checkpoint_paths(appo_aa_kl_t)},
     # {"checkpoint_dir": get_checkpoint_paths(appo_aa_bc)},
     # {"checkpoint_dir": get_checkpoint_paths(appo_aa_bc_t)},
-    {"checkpoint_dir": get_checkpoint_paths(appo_aa_ks_sweep_decay)},
+    # {"checkpoint_dir": get_checkpoint_paths(appo_aa_ks_sweep_small)},
+    # {"checkpoint_dir": get_checkpoint_paths(appo_aa_ks_sweep_decay)},
+    # {"checkpoint_dir": get_checkpoint_paths(appo_aa_ewc)},
+    # {"checkpoint_dir": get_checkpoint_paths(appo_aa_ewc2)},
 ]
 
 
