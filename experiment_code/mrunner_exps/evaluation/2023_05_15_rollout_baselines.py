@@ -52,6 +52,10 @@ params_grid = [
         "checkpoint_dir": ["/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-priceless_meninsky/2023-11-05-monk-appo-t_qphj_2/checkpoint/hackrl/nle/2023_11_05_monk-APPO-T_2_arsenetted/checkpoint.tar"],
         "savedir": ["/nle/nld-appo-t/nld_data"],
     },
+    {
+        "checkpoint_dir": ["/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/18_05-08_32-stupefied_beaver/2023-17-05-monk-appo-aa-ks-t-small-loss_gzlt_14/checkpoint/hackrl/nle/2023_17_05_monk-APPO-AA-KS-T-small_loss_14_toothsome/checkpoint.tar"],
+        "savedir": ["/nle/nld-appo-bc-t/nld_data"],
+    },
 ]
 
 
