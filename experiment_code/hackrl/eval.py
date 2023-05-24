@@ -81,6 +81,22 @@ def load_model_flags_and_step(path, device="cpu", teacher_path=None):
         model = hackrl.models.KickStarter(
             model, teacher, run_teacher_hs=flags.run_teacher_hs
         )
+    elif teacher_path:
+        print("Teacher path")
+        flags.kickstarting_path = teacher_path
+        t_data = torch.load(flags.kickstarting_path)
+        t_flags = omegaconf.OmegaConf.create(t_data["flags"])
+        t_flags.use_checkpoint_actor = False
+        teacher = hackrl.models.create_model(t_flags, flags.device)
+
+        model.load_state_dict(load_data["learner_state"]["model"])
+        teacher.load_state_dict(t_data["learner_state"]["model"])
+
+        model = hackrl.models.KickStarter(
+            model, teacher, run_teacher_hs=flags.run_teacher_hs
+        )
+        return model, flags, step
+
     model.load_state_dict(load_data["learner_state"]["model"])
     return model, flags, step
 

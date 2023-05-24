@@ -42,6 +42,8 @@ config = combine_config_with_defaults(config)
 appo_t = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-priceless_meninsky")
 appo_aa_ks_t = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-modest_goldstine")
 appo_aa_kl_t = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-pedantic_hawking")
+appo_aa_ewc1 = Path("/net/pr2/projects/plgrid/plgg_pw_crl/mbortkiewicz/mrunner_scratch/nle/20_05-17_34-cranky_mayer")
+appo_aa_ewc2 = Path("/net/pr2/projects/plgrid/plgg_pw_crl/mbortkiewicz/mrunner_scratch/nle/21_05-14_00-silly_lumiere")
 
 
 
@@ -58,6 +60,16 @@ params_grid = [
     {
         "checkpoint_dir": get_checkpoint_paths(appo_aa_kl_t),
         "forgetting_dataset": ["bc1"],
+    },
+    {
+        "checkpoint_dir": get_checkpoint_paths(appo_aa_ewc1),
+        "forgetting_dataset": ["bc1"],
+        "teacher_path": ["/net/pr2/projects/plgrid/plgg_pw_crl/mostaszewski/monk-AA-BC/checkpoint.tar"],
+    },
+    {
+        "checkpoint_dir": get_checkpoint_paths(appo_aa_ewc2),
+        "forgetting_dataset": ["bc1"],
+        "teacher_path": ["/net/pr2/projects/plgrid/plgg_pw_crl/mostaszewski/monk-AA-BC/checkpoint.tar"],
     },
 ]
 
