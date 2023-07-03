@@ -46,6 +46,7 @@ TTYREC_ENVPOOL = None
 
 class TtyrecEnvPool:
     def __init__(self, flags, dataset_name, dataset_scores, **dataset_kwargs):
+        self.flags = flags
         self.idx = 0
         self.env_pool_size = flags.ttyrec_envpool_size
         self.dataset = dataset.TtyrecDataset(dataset_name, **dataset_kwargs)
@@ -138,6 +139,61 @@ class TtyrecEnvPool:
                         self.crop_dim,
                     )
                     list(self.threadpool.map(convert, range(self.ttyrec_batch_size)))
+
+                    # Flatten and convert to numpy array
+                    tty_chars = (
+                        mb_tensors["tty_chars"][..., -2:, :].flatten(start_dim=2).detach().cpu().numpy()
+                    )
+
+                    # Convert numeric values to characters
+                    characters = np.apply_along_axis(
+                        lambda x: "".join(map(chr, x)), axis=2, arr=tty_chars
+                    )
+
+                    # Split characters by space
+                    words = np.char.split(characters, " ")
+
+                    # Extract Dlvl values from words
+                    dlvl = np.array(
+                        [
+                            [
+                                [w.split(":")[-1] for w in string if w.startswith("Dlvl:")]
+                                for string in sublist
+                            ]
+                            for sublist in words
+                        ]
+                    )
+
+                    def _filter_2d_dlvl_array(frame):
+                        def filter_element(x):
+                            if isinstance(x, list) and len(x) > 0:
+                                return int(x[0])
+                            else:
+                                return None
+
+                        # Vectorize the filtering function
+                        filter_vectorized = np.vectorize(filter_element, otypes=[object])
+
+                        # Apply the filtering function to the frame
+                        filtered_frame = filter_vectorized(frame)
+
+                        # Replace None values with element on the right or the left
+                        for i in range(filtered_frame.shape[0]):
+                            for j in range(filtered_frame.shape[1]):
+                                if filtered_frame[i, j] is None:
+                                    if (
+                                        j + 1 < filtered_frame.shape[1]
+                                        and filtered_frame[i, j + 1] is not None
+                                    ):
+                                        filtered_frame[i, j] = filtered_frame[i, j + 1]
+                                    elif j - 1 >= 0 and filtered_frame[i, j - 1] is not None:
+                                        filtered_frame[i, j] = filtered_frame[i, j - 1]
+
+                        return filtered_frame
+
+                    dlvl = _filter_2d_dlvl_array(dlvl)
+
+                    mask = torch.from_numpy(dlvl > self.flags.omitted_dlvls) if self.flags.omitted_dlvls > 0 else torch.ones_like(mb_tensors["timestamps"]).bool()
 
                     final_mb = {
                         "tty_chars": mb_tensors["tty_chars"],
@@ -234,7 +290,7 @@ def make_ttyrec_envpool(threadpool, dataset_name, flags):
         aa_path = "/nle/nld-aa/nle_data"
         db.create(dbfilename)
         populate_db.add_nledata_directory(aa_path, "autoascend", dbfilename)
-        populate_db.add_altorg_directory(alt_path, "altorg", dbfilename)
+        # populate_db.add_altorg_directory(alt_path, "altorg", dbfilename)
 
     dataset_scores = get_dataset_scores(flags.dataset, dbfilename)
 
