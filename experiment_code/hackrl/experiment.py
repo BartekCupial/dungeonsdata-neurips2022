@@ -116,6 +116,9 @@ class TtyrecEnvPool:
             prev_action = torch.zeros(
                 (self.ttyrec_batch_size, 1), dtype=torch.uint8
             ).to(self.device)
+            prev_dlvls = torch.ones(
+                (self.ttyrec_batch_size, 1), dtype=torch.uint8
+            ).to(self.device)
             while True:
                 for i, mb in enumerate(dataset):
 
@@ -177,17 +180,12 @@ class TtyrecEnvPool:
                         # Apply the filtering function to the frame
                         filtered_frame = filter_vectorized(frame)
 
-                        # Replace None values with element on the right or the left
+                        # Replace None values with dlvl from previous frame
                         for i in range(filtered_frame.shape[0]):
                             for j in range(filtered_frame.shape[1]):
                                 if filtered_frame[i, j] is None:
-                                    if (
-                                        j + 1 < filtered_frame.shape[1]
-                                        and filtered_frame[i, j + 1] is not None
-                                    ):
-                                        filtered_frame[i, j] = filtered_frame[i, j + 1]
-                                    elif j - 1 >= 0 and filtered_frame[i, j - 1] is not None:
-                                        filtered_frame[i, j] = filtered_frame[i, j - 1]
+                                    filtered_frame[i, j] = prev_dlvls[i]
+                                prev_dlvls[i] = filtered_frame[i, j]
 
                         return filtered_frame
 
@@ -203,7 +201,7 @@ class TtyrecEnvPool:
                         "done": mb_tensors["done"].bool(),
                         "timesteps": mb_tensors["timestamps"].float(),
                         # "max_scores": max_scores[mb["gameids"].flatten()].reshape(mb["gameids"].shape).float(),
-                        "mask": torch.ones_like(mb_tensors["timestamps"]).bool()
+                        "mask": mask,
                     }
 
                     if "keypresses" in mb_tensors:
