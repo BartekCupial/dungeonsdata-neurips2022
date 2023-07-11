@@ -288,7 +288,7 @@ def make_ttyrec_envpool(threadpool, dataset_name, flags):
         aa_path = "/nle/nld-aa/nle_data"
         db.create(dbfilename)
         populate_db.add_nledata_directory(aa_path, "autoascend", dbfilename)
-        # populate_db.add_altorg_directory(alt_path, "altorg", dbfilename)
+        populate_db.add_altorg_directory(alt_path, "altorg", dbfilename)
 
     dataset_scores = get_dataset_scores(flags.dataset, dbfilename)
 
@@ -716,9 +716,12 @@ def compute_gradients(data, sleep_data, learner_state, stats):
                 logits[:-1], expert[:-1]
             )
         else:
+            # TODO: Why do we take up to -1 index here and above?
             supervised_loss = (
-                FLAGS.supervised_loss * F.cross_entropy(logits[:-1], true_a[:-1]).mean()
-            )
+                FLAGS.supervised_loss
+                * F.cross_entropy(logits[:-1], true_a[:-1], reduce=False)
+                * torch.flatten(ttyrec_data["mask"], 0, 1)[:-1].int()
+            ).mean()
         FLAGS.supervised_loss *= FLAGS.supervised_decay
         stats["supervised_loss"] += supervised_loss.item()
         stats["supervised_coeff"] += FLAGS.supervised_loss

@@ -178,4 +178,4 @@ eval_rollouts: 1024
 eval_batch_size: 256
 skip_first_eval: False
 
-omitted_dlvls: 8
+omitted_dlvls: 0
