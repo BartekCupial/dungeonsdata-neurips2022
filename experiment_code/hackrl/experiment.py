@@ -611,14 +611,23 @@ def compute_entropy_loss(logits, stats=None):
     return -torch.mean(entropy_per_timestep)
 
 
-def compute_kickstarting_loss(student_logits, expert_logits):
+def compute_kickstarting_loss(student_logits, expert_logits, mask: torch.Tensor):
     T, B, *_ = student_logits.shape
-    return torch.nn.functional.kl_div(
+    if not mask:
+        return torch.nn.functional.kl_div(
+            F.log_softmax(student_logits.reshape(T * B, -1), dim=-1),
+            F.log_softmax(expert_logits.reshape(T * B, -1), dim=-1),
+            log_target=True,
+            reduction="batchmean",
+        )
+    loss = torch.nn.functional.kl_div(
         F.log_softmax(student_logits.reshape(T * B, -1), dim=-1),
         F.log_softmax(expert_logits.reshape(T * B, -1), dim=-1),
         log_target=True,
-        reduction="batchmean",
+        reduction="none",
     )
+    loss = loss.T * mask
+    return loss.sum() / B / T
 
 
 def compute_policy_gradient_loss(
@@ -888,6 +897,8 @@ def compute_gradients(data, sleep_data, learner_state, stats):
         stats["inverse_loss"] += inverse_loss.item()
 
     if FLAGS.use_kickstarting:
+        # TODO phase 2: add regularization only mask, when we reach a particular lvl
+
         kickstarting_loss = FLAGS.kickstarting_loss * compute_kickstarting_loss(
             learner_outputs["policy_logits"],
             actor_outputs["kick_policy_logits"],
@@ -912,6 +923,7 @@ def compute_gradients(data, sleep_data, learner_state, stats):
         kickstarting_loss_bc = FLAGS.kickstarting_loss_bc * compute_kickstarting_loss(
             ttyrec_predictions["policy_logits"],
             ttyrec_predictions["kick_policy_logits"],
+            torch.flatten(ttyrec_data["mask"], 0, 1).int()
         )
         FLAGS.kickstarting_loss_bc *= FLAGS.kickstarting_decay_bc
         total_loss += kickstarting_loss_bc

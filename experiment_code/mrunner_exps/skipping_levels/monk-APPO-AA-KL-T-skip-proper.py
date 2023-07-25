@@ -28,7 +28,7 @@ config = {
 params_grid = [
     {
         "exp_tags": [f"{name}-4"],
-        "seed": list(range(2, 3)),
+        "seed": list(range(5)),
         # load from checkpoint
         "unfreeze_actor_steps": [0],
         "use_checkpoint_actor": [True],
@@ -42,7 +42,7 @@ params_grid = [
     },
     {
         "exp_tags": [f"{name}-3"],
-        "seed": list(range(3)),
+        "seed": list(range(5)),
         # load from checkpoint
         "unfreeze_actor_steps": [0],
         "use_checkpoint_actor": [True],
@@ -56,7 +56,7 @@ params_grid = [
     },
     {
         "exp_tags": [f"{name}-2"],
-        "seed": list(range(3)),
+        "seed": list(range(5)),
         # load from checkpoint
         "unfreeze_actor_steps": [0],
         "use_checkpoint_actor": [True],
@@ -70,7 +70,7 @@ params_grid = [
     },
     {
         "exp_tags": [f"{name}-1"],
-        "seed": list(range(3)),
+        "seed": list(range(5)),
         # load from checkpoint
         "unfreeze_actor_steps": [0],
         "use_checkpoint_actor": [True],
@@ -84,7 +84,7 @@ params_grid = [
     },
     {
         "exp_tags": [f"{name}-0"],
-        "seed": list(range(3)),
+        "seed": list(range(5)),
         # load from checkpoint
         "unfreeze_actor_steps": [0],
         "use_checkpoint_actor": [True],
