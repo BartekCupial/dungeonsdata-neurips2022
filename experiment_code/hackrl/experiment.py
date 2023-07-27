@@ -116,9 +116,6 @@ class TtyrecEnvPool:
             prev_action = torch.zeros(
                 (self.ttyrec_batch_size, 1), dtype=torch.uint8
             ).to(self.device)
-            prev_dlvls = torch.ones(
-                (self.ttyrec_batch_size, 1), dtype=torch.uint8
-            ).to(self.device)
             while True:
                 for i, mb in enumerate(dataset):
 
@@ -178,14 +175,16 @@ class TtyrecEnvPool:
                         filter_vectorized = np.vectorize(filter_element, otypes=[object])
 
                         # Apply the filtering function to the frame
-                        filtered_frame = filter_vectorized(frame)
+                        filtered_frame = filter_vectorized(frame).astype(float)
+
+                        vals, counts = np.unique(filtered_frame[~np.isnan(filtered_frame)], return_counts=True)
+                        replace_value = vals[np.argmax(counts)] if len(vals)>0 else 0
 
                         # Replace None values with dlvl from previous frame
                         for i in range(filtered_frame.shape[0]):
                             for j in range(filtered_frame.shape[1]):
                                 if filtered_frame[i, j] is None:
-                                    filtered_frame[i, j] = prev_dlvls[i]
-                                prev_dlvls[i] = filtered_frame[i, j]
+                                    filtered_frame[i, j] = replace_value
 
                         return filtered_frame
 
@@ -613,7 +612,7 @@ def compute_entropy_loss(logits, stats=None):
 
 def compute_kickstarting_loss(student_logits, expert_logits, mask: torch.Tensor):
     T, B, *_ = student_logits.shape
-    if not mask:
+    if mask is None:
         return torch.nn.functional.kl_div(
             F.log_softmax(student_logits.reshape(T * B, -1), dim=-1),
             F.log_softmax(expert_logits.reshape(T * B, -1), dim=-1),
