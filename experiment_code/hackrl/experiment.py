@@ -46,6 +46,7 @@ TTYREC_ENVPOOL = None
 
 class TtyrecEnvPool:
     def __init__(self, flags, dataset_name, dataset_scores, **dataset_kwargs):
+        self.flags = flags
         self.idx = 0
         self.env_pool_size = flags.ttyrec_envpool_size
         self.dataset = dataset.TtyrecDataset(dataset_name, **dataset_kwargs)
@@ -139,6 +140,58 @@ class TtyrecEnvPool:
                     )
                     list(self.threadpool.map(convert, range(self.ttyrec_batch_size)))
 
+                    # Flatten and convert to numpy array
+                    tty_chars = (
+                        mb_tensors["tty_chars"][..., -2:, :].flatten(start_dim=2).detach().cpu().numpy()
+                    )
+
+                    # Convert numeric values to characters
+                    characters = np.apply_along_axis(
+                        lambda x: "".join(map(chr, x)), axis=2, arr=tty_chars
+                    )
+
+                    # Split characters by space
+                    words = np.char.split(characters, " ")
+
+                    # Extract Dlvl values from words
+                    dlvl = np.array(
+                        [
+                            [
+                                [w.split(":")[-1] for w in string if w.startswith("Dlvl:")]
+                                for string in sublist
+                            ]
+                            for sublist in words
+                        ]
+                    )
+
+                    def _filter_2d_dlvl_array(frame):
+                        def filter_element(x):
+                            if isinstance(x, list) and len(x) > 0:
+                                return int(x[0])
+                            else:
+                                return None
+
+                        # Vectorize the filtering function
+                        filter_vectorized = np.vectorize(filter_element, otypes=[object])
+
+                        # Apply the filtering function to the frame
+                        filtered_frame = filter_vectorized(frame).astype(float)
+
+                        vals, counts = np.unique(filtered_frame[~np.isnan(filtered_frame)], return_counts=True)
+                        replace_value = vals[np.argmax(counts)] if len(vals)>0 else 0
+
+                        # Replace None values with dlvl from previous frame
+                        for i in range(filtered_frame.shape[0]):
+                            for j in range(filtered_frame.shape[1]):
+                                if filtered_frame[i, j] is None:
+                                    filtered_frame[i, j] = replace_value
+
+                        return filtered_frame
+
+                    dlvl = _filter_2d_dlvl_array(dlvl)
+
+                    mask = torch.from_numpy(dlvl > self.flags.omitted_dlvls) if self.flags.omitted_dlvls > 0 else torch.ones_like(mb_tensors["timestamps"]).bool()
+
                     final_mb = {
                         "tty_chars": mb_tensors["tty_chars"],
                         "tty_colors": mb_tensors["tty_colors"],
@@ -147,7 +200,7 @@ class TtyrecEnvPool:
                         "done": mb_tensors["done"].bool(),
                         "timesteps": mb_tensors["timestamps"].float(),
                         # "max_scores": max_scores[mb["gameids"].flatten()].reshape(mb["gameids"].shape).float(),
-                        "mask": torch.ones_like(mb_tensors["timestamps"]).bool()
+                        "mask": mask,
                     }
 
                     if "keypresses" in mb_tensors:
@@ -557,14 +610,23 @@ def compute_entropy_loss(logits, stats=None):
     return -torch.mean(entropy_per_timestep)
 
 
-def compute_kickstarting_loss(student_logits, expert_logits):
+def compute_kickstarting_loss(student_logits, expert_logits, mask: torch.Tensor):
     T, B, *_ = student_logits.shape
-    return torch.nn.functional.kl_div(
+    if mask is None:
+        return torch.nn.functional.kl_div(
+            F.log_softmax(student_logits.reshape(T * B, -1), dim=-1),
+            F.log_softmax(expert_logits.reshape(T * B, -1), dim=-1),
+            log_target=True,
+            reduction="batchmean",
+        )
+    loss = torch.nn.functional.kl_div(
         F.log_softmax(student_logits.reshape(T * B, -1), dim=-1),
         F.log_softmax(expert_logits.reshape(T * B, -1), dim=-1),
         log_target=True,
-        reduction="batchmean",
+        reduction="none",
     )
+    loss = loss.T * mask
+    return loss.sum() / B / T
 
 
 def compute_policy_gradient_loss(
@@ -662,9 +724,12 @@ def compute_gradients(data, sleep_data, learner_state, stats):
                 logits[:-1], expert[:-1]
             )
         else:
+            # TODO: Why do we take up to -1 index here and above?
             supervised_loss = (
-                FLAGS.supervised_loss * F.cross_entropy(logits[:-1], true_a[:-1]).mean()
-            )
+                FLAGS.supervised_loss
+                * F.cross_entropy(logits[:-1], true_a[:-1], reduce=False)
+                * torch.flatten(ttyrec_data["mask"], 0, 1)[:-1].int()
+            ).mean()
         FLAGS.supervised_loss *= FLAGS.supervised_decay
         stats["supervised_loss"] += supervised_loss.item()
         stats["supervised_coeff"] += FLAGS.supervised_loss
@@ -831,6 +896,8 @@ def compute_gradients(data, sleep_data, learner_state, stats):
         stats["inverse_loss"] += inverse_loss.item()
 
     if FLAGS.use_kickstarting:
+        # TODO phase 2: add regularization only mask, when we reach a particular lvl
+
         kickstarting_loss = FLAGS.kickstarting_loss * compute_kickstarting_loss(
             learner_outputs["policy_logits"],
             actor_outputs["kick_policy_logits"],
@@ -855,6 +922,7 @@ def compute_gradients(data, sleep_data, learner_state, stats):
         kickstarting_loss_bc = FLAGS.kickstarting_loss_bc * compute_kickstarting_loss(
             ttyrec_predictions["policy_logits"],
             ttyrec_predictions["kick_policy_logits"],
+            torch.flatten(ttyrec_data["mask"], 0, 1).int()
         )
         FLAGS.kickstarting_loss_bc *= FLAGS.kickstarting_decay_bc
         total_loss += kickstarting_loss_bc
