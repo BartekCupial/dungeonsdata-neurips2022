@@ -15,7 +15,7 @@ from . import tasks
 from . import wrappers
 
 
-def create_env(flags, savedir=None, save_ttyrec_every=0):
+def create_env(flags, savedir=None, save_ttyrec_every=0, gameloaddir=None):
     env_class = tasks.ENVS[flags.env.name]
 
     observation_keys = (
@@ -42,6 +42,7 @@ def create_env(flags, savedir=None, save_ttyrec_every=0):
         penalty_step=flags.penalty_step,
         penalty_time=flags.penalty_time,
         penalty_mode=flags.fn_penalty_step,
+        gameloaddir=gameloaddir,
     )
     if flags.env.name == "challenge":
         kwargs["no_progress_timeout"]=150
