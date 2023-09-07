@@ -80,6 +80,7 @@ From: nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
 
     pip install -q transformers~=4.5.1
     pip install -q packaging~=21.3
+    pip install -q ray~=2.6
 
     # Test transformers, NLE and moolib.
     python -c 'import transformers'
