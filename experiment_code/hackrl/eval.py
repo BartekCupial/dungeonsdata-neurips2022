@@ -74,6 +74,7 @@ def generate_envpool_rollouts(
     savedir=None,
     save_ttyrec_every=0,
     log_to_wandb=False,
+    env="challenge",
 ):
     global ENVS
     # NB: We do NOT want to generate the first N rollouts from B batch
@@ -81,6 +82,9 @@ def generate_envpool_rollouts(
     # Instead lets just allocate some episodes to each env
     split = rollouts // (batch_size * num_actor_batches)
     flags.batch_size = batch_size
+    flags.env.name = env
+    flags.reward_win = 1000
+    flags.reward_lose = 1
     device = flags.device
 
     ENVS = moolib.EnvPool(
@@ -385,6 +389,7 @@ def parse_args(args=None):
     parser.add_argument("--num_actor_batches", type=int, default=2)
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--score_target", type=float, default=5000)
+    parser.add_argument("--env", type=str, default="challenge")
     # wandb stuff
     parser.add_argument("--wandb", type=bool, default=False)
     parser.add_argument("--exp_kind", type=str, default="eval")
@@ -403,6 +408,7 @@ def main(variant):
         num_actor_cpus=variant["num_actor_cpus"],
         num_actor_batches=variant["num_actor_batches"],
         score_target=variant["score_target"],
+        env=variant["env"],
         log_to_wandb=log_to_wandb,
     )
 

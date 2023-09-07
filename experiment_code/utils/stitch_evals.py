@@ -67,7 +67,7 @@ def log_group(group, df, config):
         logs = row.to_dict()
         logs["global/env_train_steps"] = logs["_step"]
         del logs["group"]
-        wandb.log(logs, step=logs["_step"])
+        wandb.log(logs, step=int(logs["_step"]))
 
     wandb.finish()
 

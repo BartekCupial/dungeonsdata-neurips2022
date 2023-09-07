@@ -38,20 +38,20 @@ config = {
 config = combine_config_with_defaults(config)
 
 
-# aa_bc = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-condescending_turing")
+aa_bc = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-condescending_turing")
 # appo = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-cranky_fermi")
-# appo_t = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-priceless_meninsky")
+appo_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_02-priceless_meninsky")
 # appo_aa_ks = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-loving_feynman")
 # appo_aa_ks_t = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-modest_goldstine")
 # appo_aa_kl = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-festive_perlman")
-appo_aa_kl_t = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-pedantic_hawking")
+appo_aa_kl_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-pedantic_hawking")
 # appo_aa_bc = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-musing_kilby")
 # appo_aa_bc_t = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-nervous_wiles")
 
 # aa_bc_deep = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/10_05-09_22-awesome_heisenberg")
 
 
-ckpt_paths = get_checkpoint_paths(appo_aa_kl_t)
+ckpt_paths = get_checkpoint_paths(appo_t)
 
 paths = []
 for path in ckpt_paths:
@@ -62,7 +62,10 @@ for path in ckpt_paths:
 
 # params different between exps
 params_grid = [
-    {"checkpoint_dir": paths},
+    {
+        "checkpoint_dir": paths,
+        "env": ["gold", "staircase", "pet", "oracle", "eat", "scout"],
+    },
 ]
 
 

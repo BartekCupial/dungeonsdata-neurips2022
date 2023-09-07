@@ -42,8 +42,10 @@ def create_env(flags, savedir=None, save_ttyrec_every=0):
         penalty_step=flags.penalty_step,
         penalty_time=flags.penalty_time,
         penalty_mode=flags.fn_penalty_step,
-        no_progress_timeout=150,
     )
+    if flags.env.name == "challenge":
+        kwargs["no_progress_timeout"]=150
+
     if flags.env in ("staircase", "pet", "oracle"):
         kwargs.update(reward_win=flags.reward_win, reward_lose=flags.reward_lose)
     # else:  # print warning once
