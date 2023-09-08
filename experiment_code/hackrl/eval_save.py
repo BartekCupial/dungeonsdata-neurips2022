@@ -194,47 +194,66 @@ def single_evaluation(path, device, **kwargs):
     return returns, flags, step
 
 
+# def multiple_evaluations(path, device, gameloaddir, **kwargs):
+#     import ray
+#     # ray.init(ignore_reinit_error=True, _temp_dir="/net/ascratch/people/plgbartekcupial/tmp")
+#     ray.init(ignore_reinit_error=True)
+
+#     refs = []
+
+#     @ray.remote(num_gpus=0, num_cpus=1, memory=4 * 1024 * 1024 * 1024)
+#     def remote_evaluation(gameloaddir=gameloaddir, **kwargs):
+#         q = Queue()
+
+#         def sim():
+#             q.put(single_evaluation(path, device, gameloaddir=gameloaddir, **kwargs))
+
+#         try:
+#             p = Process(target=sim, daemon=False)
+#             p.start()
+#             return q.get()
+#         finally:
+#             p.terminate()
+#             p.join()
+
+#     for gamepath in gameloaddir:
+#         refs.append(remote_evaluation.remote(gameloaddir=gamepath, **kwargs))
+
+#     all_res = defaultdict(list)
+#     count = 0
+#     for handle in refs:
+#         ref, refs = ray.wait(refs, num_returns=1, timeout=None)
+#         single_res = ray.get(ref[0])
+#         results, flags, step = single_res
+
+#         count += 1
+#         for k, v in results.items():
+#             all_res[k].append(v)
+
+#         text = []
+#         text.append(f'count                         : {count}')
+#         print('\n'.join(text) + '\n')
+    
+#     print('DONE!')
+#     ray.shutdown()
+
+#     return all_res, flags, step
+
+
 def multiple_evaluations(path, device, gameloaddir, **kwargs):
-    import ray
-    ray.init(ignore_reinit_error=True, _temp_dir="/net/ascratch/people/plgbartekcupial/tmp")
-
-    refs = []
-
-    @ray.remote(num_gpus=0)
-    def remote_evaluation(gameloaddir=gameloaddir, **kwargs):
-        q = Queue()
-
-        def sim():
-            q.put(single_evaluation(path, device, gameloaddir=gameloaddir, **kwargs))
-
-        try:
-            p = Process(target=sim, daemon=False)
-            p.start()
-            return q.get()
-        finally:
-            p.terminate()
-            p.join()
-
-    for gamepath in gameloaddir:
-        refs.append(remote_evaluation.remote(gameloaddir=gamepath, **kwargs))
+    model, flags, step = load_model_flags_and_step(path, device)
 
     all_res = defaultdict(list)
-    count = 0
-    for handle in refs:
-        ref, refs = ray.wait(refs, num_returns=1, timeout=None)
-        single_res = ray.get(ref[0])
-        results, flags, step = single_res
+    for gamepath in tqdm.tqdm(gameloaddir):
+        returns = single_rollout(
+            model=model,
+            flags=flags,
+            gameloaddir=gamepath,
+            **kwargs
+        )
 
-        count += 1
-        for k, v in results.items():
+        for k, v in returns.items():
             all_res[k].append(v)
-
-        text = []
-        text.append(f'count                         : {count}')
-        print('\n'.join(text) + '\n')
-    
-    print('DONE!')
-    ray.shutdown()
 
     return all_res, flags, step
 

@@ -1,0 +1,13 @@
+{
+    "exp_kind": "eval_stitch",
+    "filters": {
+        "$or": [
+            {
+                "config.exp_kind": "eval",
+                "config.name": "save_3",
+                "config.exp_point": "monk-APPO"
+            }
+        ]
+    }
+}
+

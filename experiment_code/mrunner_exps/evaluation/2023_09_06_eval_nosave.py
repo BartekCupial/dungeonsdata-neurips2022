@@ -44,29 +44,26 @@ appo_aa_kl_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/n
 
 save_root_path = Path("/net/ascratch/people/plgbartekcupial")
 
-ckpt_paths = get_checkpoint_paths(appo_aa_kl_t)
-
-paths = []
-for path in ckpt_paths:
-    for i in range(0, 2_000_000_000, 100_000_000):
-        paths.append(Path(path) / f"checkpoint_v{i}")
-    paths.append(Path(path) / "checkpoint.tar")
-
-save_paths = []
-for i in range(2, 10): # todo 10, 11
-    folder = f"saves{i}"
-    saves = get_save_paths(save_root_path / folder, host="ares.cyfronet.pl")
-    # limit to 1000 saves
-    saves = [save_root_path / folder / s for e, s in enumerate(saves) if e < 1000]
-    save_paths.append(saves)
+cpaths = []
+for ckpt_paths in [
+    get_checkpoint_paths(aa_bc),
+    get_checkpoint_paths(appo_t),
+    get_checkpoint_paths(appo_aa_kl_t),
+]:
+    paths = []
+    for path in ckpt_paths:
+        for i in range(0, 2_000_000_000, 100_000_000):
+            paths.append(Path(path) / f"checkpoint_v{i}")
+        paths.append(Path(path) / "checkpoint.tar")
+    cpaths.append(paths)
 
 # params different between exps
 params_grid = [
     {
         "checkpoint_dir": paths,
-        "gameloaddir": [spaths],
-        "name": [f"save_{e}"],
-    } for e, spaths in enumerate(save_paths, 2)
+        "gameloaddir": [[None] * 1000],
+        "name": [f"save_1"],
+    } for paths in cpaths
 ]
 
 

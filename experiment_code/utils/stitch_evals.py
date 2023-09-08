@@ -87,8 +87,10 @@ def main(variant):
     for group in groups:
         config = configs[group]
         config.update(variant)
-        log_group(group, df, config)
-
+        try:
+            log_group(group, df, config)
+        except Exception as e:
+            print(e)
 
 if __name__ == "__main__":
     args = vars(parse_args())
