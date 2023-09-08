@@ -1,6 +1,9 @@
 from pathlib import Path
 
-from mrunner.helpers.specification_helper import create_experiments_helper, get_combinations
+from mrunner.helpers.specification_helper import (
+    create_experiments_helper,
+    get_combinations,
+)
 
 
 name = globals()["script"][:-3]
@@ -8,18 +11,17 @@ name = globals()["script"][:-3]
 # params for all exps
 config = {
     "exp_tags": [name],
-    "connect":"0.0.0.0:4431",
+    "connect": "0.0.0.0:4431",
     "exp_set": "2G",
     "exp_point": "monk-APPODT-AA-KSDT",
     "num_actor_cpus": 20,
     "total_steps": 2_000_000_000,
     "ttyrec_batch_size": 256,
     "kickstarting_loss": 0.1,
-    'group': name,
-    "use_kickstarting": True, 
+    "group": name,
+    "use_kickstarting": True,
     "kickstarting_path": "/scratch/nle/25_04-10_53-romantic_davinci/2023-04-25-search-layer-head_wxxn_0/checkpoint/hackrl/nle/2023_04_25_search_layer_head_0/checkpoint.tar",
     "character": "mon-hum-neu-mal",
-
     "model": "DecisionTransformer",
     "return_to_go": True,
     "use_timesteps": True,

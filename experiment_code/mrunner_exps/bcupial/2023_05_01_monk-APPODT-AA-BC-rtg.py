@@ -1,6 +1,9 @@
 from pathlib import Path
 
-from mrunner.helpers.specification_helper import create_experiments_helper, get_combinations
+from mrunner.helpers.specification_helper import (
+    create_experiments_helper,
+    get_combinations,
+)
 from random_word import RandomWords
 
 
@@ -9,14 +12,14 @@ name = globals()["script"][:-3]
 # params for all exps
 config = {
     "exp_tags": [name],
-    "connect":"0.0.0.0:4431",
+    "connect": "0.0.0.0:4431",
     "exp_set": "2G",
     "exp_point": "monk-APPODT-AA-BC",
     "num_actor_cpus": 20,
     "total_steps": 2_000_000_000,
     "ttyrec_batch_size": 256,
     "supervised_loss": 0.1,
-    'group': name,
+    "group": name,
     "character": "mon-hum-neu-mal",
     "model": "DecisionTransformer",
     "return_to_go": True,
@@ -31,10 +34,8 @@ config = {
     "hidden_dim": 512,
     "warmup_steps": 10000,
     "weight_decay": 0.01,
-
     "use_checkpoint_actor": True,
     "model_checkpoint_path": "/tscratch/nle/30_04-06_07-relaxed_spence/2023-04-30-pretrain-no-returns_usal_1/checkpoint/hackrl/nle/2023_04_30_pretrain_no_returns_1/checkpoint.tar",
-
     "appo_clip_policy": 0.02,
     "use_returns": False,
 }
@@ -47,13 +48,13 @@ params_grid = [
         "n_head": [4],
         "use_checkpoint_actor": [True],
         "unfreeze_actor_steps": [50_000_000],
-        "seed": [0], # reduced number of seeds
+        "seed": [0],  # reduced number of seeds
     },
     {
         "n_layer": [3],
         "n_head": [4],
         "use_checkpoint_actor": [False],
-        "seed": [0], # reduced number of seeds
+        "seed": [0],  # reduced number of seeds
     },
 ]
 

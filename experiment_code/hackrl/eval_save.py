@@ -33,11 +33,19 @@ from hackrl.core import nest
 import matplotlib.pyplot as plt
 
 from hackrl.eval import load_model_flags_and_step
-from hackrl.utils.tasks_rewards import GoldScore, StaircasePetScore, ScoutScore, StaircaseScore, EatingScore
+from hackrl.utils.tasks_rewards import (
+    GoldScore,
+    StaircasePetScore,
+    ScoutScore,
+    StaircaseScore,
+    EatingScore,
+)
 
 
-BLStats = namedtuple('BLStats',
-                     'x y strength_percentage strength dexterity constitution intelligence wisdom charisma score hitpoints max_hitpoints depth gold energy max_energy armor_class monster_level experience_level experience_points time hunger_state carrying_capacity dungeon_number level_number prop_mask align_bits')
+BLStats = namedtuple(
+    "BLStats",
+    "x y strength_percentage strength dexterity constitution intelligence wisdom charisma score hitpoints max_hitpoints depth gold energy max_energy armor_class monster_level experience_level experience_points time hunger_state carrying_capacity dungeon_number level_number prop_mask align_bits",
+)
 
 
 def go_back(num_lines):
@@ -65,9 +73,9 @@ def single_rollout(
     device = flags.device
 
     env = hackrl.environment.create_env(
-        flags, 
-        savedir=savedir, 
-        save_ttyrec_every=save_ttyrec_every, 
+        flags,
+        savedir=savedir,
+        save_ttyrec_every=save_ttyrec_every,
         gameloaddir=gameloaddir,
     )
 
@@ -108,7 +116,7 @@ def single_rollout(
         env_outputs = nest.map(lambda t: torch.from_numpy(t).unsqueeze(0), obs)
         env_outputs["reward"] = torch.tensor(reward)
         env_outputs["done"] = torch.tensor(done)
-        
+
         current_reward += env_outputs["reward"]
 
         env_outputs["timesteps"] = torch.tensor(timesteps)
@@ -129,11 +137,11 @@ def single_rollout(
         observation = tuple(a.copy() for a in env.last_observation)
         end_status = info["end_status"]
 
-        gold_score.accumulate_reward(env.env, last_observation, observation, end_status)
-        eating_score.accumulate_reward(env.env, last_observation, observation, end_status)
-        scout_score.accumulate_reward(env.env, last_observation, observation, end_status)
-        staircase_score.accumulate_reward(env.env, last_observation, observation, end_status)
-        staircasepet_score.accumulate_reward(env.env, last_observation, observation, end_status)
+        gold_score.reward(env.env, last_observation, observation, end_status)
+        eating_score.reward(env.env, last_observation, observation, end_status)
+        scout_score.reward(env.env, last_observation, observation, end_status)
+        staircase_score.reward(env.env, last_observation, observation, end_status)
+        staircasepet_score.reward(env.env, last_observation, observation, end_status)
 
         if done:
             break
@@ -192,14 +200,11 @@ def single_rollout(
 
 #     return results_to_dict(returns), flags, step
 
+
 def single_evaluation(path, device, **kwargs):
     model, flags, step = load_model_flags_and_step(path, device)
 
-    returns = single_rollout(
-        model=model,
-        flags=flags,
-        **kwargs
-    )
+    returns = single_rollout(model=model, flags=flags, **kwargs)
 
     return returns, flags, step
 
@@ -243,7 +248,7 @@ def single_evaluation(path, device, **kwargs):
 #         text = []
 #         text.append(f'count                         : {count}')
 #         print('\n'.join(text) + '\n')
-    
+
 #     print('DONE!')
 #     ray.shutdown()
 
@@ -256,10 +261,7 @@ def multiple_evaluations(path, device, gameloaddir, **kwargs):
     all_res = defaultdict(list)
     for gamepath in tqdm.tqdm(gameloaddir):
         returns = single_rollout(
-            model=model,
-            flags=flags,
-            gameloaddir=gamepath,
-            **kwargs
+            model=model, flags=flags, gameloaddir=gamepath, **kwargs
         )
 
         for k, v in returns.items():
@@ -272,13 +274,20 @@ def parse_args(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", type=str, default="evaluation")
     parser.add_argument("--checkpoint_dir", type=Path)
-    parser.add_argument("--gameloaddir", type=str, default=None, help="can be a single path or a list of paths")
+    parser.add_argument(
+        "--gameloaddir",
+        type=str,
+        default=None,
+        help="can be a single path or a list of paths",
+    )
     parser.add_argument("--results_path", type=Path, default="data.json")
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--score_target", type=float, default=5000)
     parser.add_argument("--env", type=str, default="challenge")
     # render
-    parser.add_argument("--render", type=bool, default=False, help="Disables env.render().")
+    parser.add_argument(
+        "--render", type=bool, default=False, help="Disables env.render()."
+    )
     parser.add_argument(
         "--render_mode",
         type=str,
@@ -289,7 +298,7 @@ def parse_args(args=None):
     parser.add_argument(
         "--print_frames_separately",
         "-p",
-        type=bool, 
+        type=bool,
         default=True,
         help="Don't overwrite frames, print them all.",
     )

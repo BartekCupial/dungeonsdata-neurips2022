@@ -7,7 +7,12 @@ import torch.nn.functional as F
 
 from hackrl.core import nest
 from hackrl.models.trajectory_gpt2 import GPT2Model
-from hackrl.models.chaotic_dwarf import ChaoticDwarvenGPT5, ScreenEncoder, BottomLinesEncoder, TopLineEncoder
+from hackrl.models.chaotic_dwarf import (
+    ChaoticDwarvenGPT5,
+    ScreenEncoder,
+    BottomLinesEncoder,
+    TopLineEncoder,
+)
 
 
 class DecisionTransformer(ChaoticDwarvenGPT5):
@@ -71,7 +76,9 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
         if self.linear_time_embeddings:
             self.embed_timestep = nn.Linear(1, self.hidden_dim)
         else:
-            self.embed_timestep = nn.Embedding(flags.env.max_episode_steps, self.hidden_dim)
+            self.embed_timestep = nn.Embedding(
+                flags.env.max_episode_steps, self.hidden_dim
+            )
         self.embed_ln = nn.LayerNorm(self.hidden_dim)
 
     def apply(self, fn):
@@ -82,9 +89,15 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
             # elif isinstance(module, torch.jit.RecursiveScriptModule) and module.original_name == TopLineEncoder.__name__:
             elif isinstance(module, TopLineEncoder):
                 module.apply(partial(fn, gain=5.0))
-            elif isinstance(module, torch.jit.RecursiveScriptModule) and module.original_name == BottomLinesEncoder.__name__:
+            elif (
+                isinstance(module, torch.jit.RecursiveScriptModule)
+                and module.original_name == BottomLinesEncoder.__name__
+            ):
                 module.apply(partial(fn, gain=3.3))
-            elif isinstance(module, torch.jit.RecursiveScriptModule) and module.original_name == ScreenEncoder.__name__:
+            elif (
+                isinstance(module, torch.jit.RecursiveScriptModule)
+                and module.original_name == ScreenEncoder.__name__
+            ):
                 module.apply(partial(fn, gain=2.2))
             else:
                 module.apply(fn)
@@ -114,10 +127,26 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
         OT = org_inputs["screen_image"].shape[0]
         K = max(self.max_length, OT)
 
-        core_state = dict(sorted({key: value for key, value in core_state.items() if key in inputs.keys()}.items()))
-        inputs = dict(sorted({key: value for key, value in inputs.items() if key in core_state.keys()}.items()))
+        core_state = dict(
+            sorted(
+                {
+                    key: value
+                    for key, value in core_state.items()
+                    if key in inputs.keys()
+                }.items()
+            )
+        )
+        inputs = dict(
+            sorted(
+                {
+                    key: value
+                    for key, value in inputs.items()
+                    if key in core_state.keys()
+                }.items()
+            )
+        )
         inputs = nest.map_many(partial(torch.cat, dim=0), *[core_state, inputs])
-        inputs = nest.map(lambda x: x[-K :], inputs)
+        inputs = nest.map(lambda x: x[-K:], inputs)
 
         T, B, C, H, W = inputs["screen_image"].shape
 
@@ -150,11 +179,7 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
         ]
         if self.use_prev_action:
             actions = inputs["prev_action"].permute(1, 0).float().long()
-            st.append(
-                self.action_encoder(
-                    actions
-                ).reshape(T * B, -1)
-            )
+            st.append(self.action_encoder(actions).reshape(T * B, -1))
         if self.use_returns:
             if self.return_to_go:
                 target_score = inputs["max_scores"] - inputs["scores"]
@@ -183,7 +208,7 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
                 .repeat(B, 1, 1)
             )
             if self.linear_time_embeddings:
-                timesteps = timesteps.float()  
+                timesteps = timesteps.float()
             else:
                 timesteps = timesteps.long().squeeze(-1)
 
@@ -233,7 +258,9 @@ class DecisionTransformer(ChaoticDwarvenGPT5):
         # -- [B' x 1]
         baseline = self.baseline(x).squeeze(-1)
 
-        action = torch.multinomial(F.softmax(policy_logits.view(B * OT, -1), dim=1), num_samples=1)
+        action = torch.multinomial(
+            F.softmax(policy_logits.view(B * OT, -1), dim=1), num_samples=1
+        )
 
         policy_logits = policy_logits.permute(1, 0, 2)
         baseline = baseline.permute(1, 0)

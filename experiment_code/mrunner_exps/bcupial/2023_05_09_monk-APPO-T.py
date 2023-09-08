@@ -1,7 +1,10 @@
 from pathlib import Path
 from random_word import RandomWords
 
-from mrunner.helpers.specification_helper import create_experiments_helper, get_combinations
+from mrunner.helpers.specification_helper import (
+    create_experiments_helper,
+    get_combinations,
+)
 
 
 name = globals()["script"][:-3]
@@ -9,12 +12,12 @@ name = globals()["script"][:-3]
 # params for all exps
 config = {
     "exp_tags": [name],
-    "connect":"0.0.0.0:4431",
+    "connect": "0.0.0.0:4431",
     "exp_set": "2G",
     "exp_point": "monk-APPO",
     "num_actor_cpus": 20,
     "total_steps": 2_000_000_000,
-    'group': "monk-APPO",
+    "group": "monk-APPO",
     "character": "mon-hum-neu-mal",
     "use_checkpoint_actor": False,
 }
@@ -22,7 +25,7 @@ config = {
 # params different between exps
 params_grid = [
     {
-        "seed":  list(range(5)),
+        "seed": list(range(5)),
         "unfreeze_actor_steps": [50_000_000],
         "use_checkpoint_actor": [True],
         "model_checkpoint_path": ["/checkpoint/hackrl/nle/monk-AA-BC_1/checkpoint.tar"],

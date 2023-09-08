@@ -1,6 +1,9 @@
 from pathlib import Path
 
-from mrunner.helpers.specification_helper import create_experiments_helper, get_combinations
+from mrunner.helpers.specification_helper import (
+    create_experiments_helper,
+    get_combinations,
+)
 from random_word import RandomWords
 
 
@@ -9,12 +12,12 @@ name = globals()["script"][:-3]
 # params for all exps
 config = {
     "exp_tags": [name],
-    "connect":"0.0.0.0:4431",
+    "connect": "0.0.0.0:4431",
     "exp_set": "2G",
     "exp_point": "monk-APPODT",
     "num_actor_cpus": 20,
     "total_steps": 2_000_000_000,
-    'group': "monk-APPODT",
+    "group": "monk-APPODT",
     "character": "mon-hum-neu-mal",
     "model": "DecisionTransformer",
     "use_timesteps": True,
@@ -27,10 +30,8 @@ config = {
     "hidden_dim": 512,
     "warmup_steps": 10000,
     "weight_decay": 0.01,
-
     "use_checkpoint_actor": True,
     "model_checkpoint_path": "/scratch/nle/25_04-10_53-romantic_davinci/2023-04-25-search-layer-head_wxxn_0/checkpoint/hackrl/nle/2023_04_25_search_layer_head_0/checkpoint.tar",
-
     "use_returns": False,
 }
 
@@ -49,8 +50,10 @@ params_grid = [
         "entropy_cost": [0.0],
         "n_layer": [3],
         "n_head": [4],
-        "seed": [0], # reduced number of seeds
-        "model_checkpoint_path": ["/tscratch/nle/30_04-06_07-relaxed_spence/2023-04-30-pretrain-no-returns_usal_1/checkpoint/hackrl/nle/2023_04_30_pretrain_no_returns_1/checkpoint.tar"],
+        "seed": [0],  # reduced number of seeds
+        "model_checkpoint_path": [
+            "/tscratch/nle/30_04-06_07-relaxed_spence/2023-04-30-pretrain-no-returns_usal_1/checkpoint/hackrl/nle/2023_04_30_pretrain_no_returns_1/checkpoint.tar"
+        ],
     },
 ]
 

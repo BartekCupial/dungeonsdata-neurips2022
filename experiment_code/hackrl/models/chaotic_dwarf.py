@@ -92,7 +92,6 @@ class BLStatsEncoder(nn.Module):
         self.blstat_range = (-5, 5)
 
     def forward(self, blstats):
-
         norm_bls = torch.clip(
             blstats * self.normalization_stats,
             self.blstat_range[0],

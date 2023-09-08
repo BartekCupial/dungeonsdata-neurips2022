@@ -8,12 +8,12 @@ name = globals()["script"][:-3]
 # params for all exps
 config = {
     "exp_tags": [name],
-    "connect":"0.0.0.0:4431",
+    "connect": "0.0.0.0:4431",
     "exp_set": "2G",
     "exp_point": "monk-APPODT",
     "num_actor_cpus": 20,
     "total_steps": 2_000_000_000,
-    'group': "monk-APPODT",
+    "group": "monk-APPODT",
     "character": "mon-hum-neu-mal",
     "model": "DecisionTransformer",
     "use_timesteps": True,
@@ -39,10 +39,11 @@ params_grid = {
     "dbfilename": ["/home/bartek/Workspace/data/nethack/AA-taster/ttyrecs.db"],
     "dataset": ["bc"],
     "wandb": [True],
-
     "use_checkpoint_actor": [False],
     "unfreeze_actor_steps": [0],
-    "model_checkpoint_path": ["/home/bartek/Workspace/data/nethack_checkpoints/monk-AA-DT/checkpoint.tar"],
+    "model_checkpoint_path": [
+        "/home/bartek/Workspace/data/nethack_checkpoints/monk-AA-DT/checkpoint.tar"
+    ],
 }
 
 experiments_list = create_experiments_helper(

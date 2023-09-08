@@ -1,17 +1,15 @@
 import paramiko
 
 
-
 def get_checkpoint_paths(
-    dir, 
+    dir,
     # SSH connection details
-    host = 'athena.cyfronet.pl',
-    username = 'plgbartekcupial',
-    private_key_path = '/home/bartek/.ssh/id_rsa',
+    host="athena.cyfronet.pl",
+    username="plgbartekcupial",
+    private_key_path="/home/bartek/.ssh/id_rsa",
 ):
     # Command to execute
     find = f'find {dir} -type f -name "checkpoint_*" -printf "%h\n" | sort -u'
-
 
     # Create SSH client
     ssh = paramiko.SSHClient()
@@ -32,7 +30,7 @@ def get_checkpoint_paths(
         # Read the output
         output = stdout.read().decode()
 
-        paths = output.split('\n')
+        paths = output.split("\n")
         # filter empty strings
         paths = list(filter(None, paths))
 
@@ -47,12 +45,12 @@ def get_checkpoint_paths(
 def get_save_paths(
     dir,
     # SSH connection details
-    host = 'athena.cyfronet.pl',
-    username = 'plgbartekcupial',
-    private_key_path = '/home/bartek/.ssh/id_rsa',
+    host="athena.cyfronet.pl",
+    username="plgbartekcupial",
+    private_key_path="/home/bartek/.ssh/id_rsa",
 ):
     # Command to execute
-    ls = f'ls {dir}'
+    ls = f"ls {dir}"
 
     # Create SSH client
     ssh = paramiko.SSHClient()
@@ -73,7 +71,7 @@ def get_save_paths(
         # Read the output
         output = stdout.read().decode()
 
-        paths = output.split('\n')
+        paths = output.split("\n")
         # filter empty strings
         paths = list(filter(None, paths))
 
@@ -83,4 +81,3 @@ def get_save_paths(
     finally:
         # Close the SSH connection
         ssh.close()
-

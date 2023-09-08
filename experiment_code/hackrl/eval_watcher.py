@@ -51,8 +51,8 @@ def scan_checkpoints(checkpoint_dir, processed, checkpoint_step):
     files = list(checkpoint_dir.iterdir())
     files = list(filter(lambda p: p not in processed, files))
     files = list(filter(match_function, files))
-    files = list(filter(lambda p: tryint(p.name.split('_')[1][1:]), files))
-    files = sorted(files, key=lambda path: int(path.name.split('_')[1][1:]))
+    files = list(filter(lambda p: tryint(p.name.split("_")[1][1:]), files))
+    files = sorted(files, key=lambda path: int(path.name.split("_")[1][1:]))
 
     if len(files) == 0:
         return None
@@ -71,21 +71,25 @@ def match_pattern(file, pattern, step):
 
 def main(variant):
     global ENVS
-   
+
     print("Watcher listening...")
-    try: 
+    try:
         processed = []
         while True:
             time.sleep(0.25)
-            
-            checkpoint_path = scan_checkpoints(variant["checkpoint_dir"], processed, variant["checkpoint_step"])
+
+            checkpoint_path = scan_checkpoints(
+                variant["checkpoint_dir"], processed, variant["checkpoint_step"]
+            )
 
             dummy_log()
 
             if checkpoint_path:
                 processed.append(checkpoint_path)
 
-                model, flags, step = load_model_flags_and_step(checkpoint_path, variant["device"])
+                model, flags, step = load_model_flags_and_step(
+                    checkpoint_path, variant["device"]
+                )
 
                 if ENVS is None:
                     ENVS = moolib.EnvPool(
@@ -121,7 +125,7 @@ def main(variant):
 
                 wandb.log(results)
 
-                if int(checkpoint_path.name.split('_')[1][1:]) == variant["max_step"]:
+                if int(checkpoint_path.name.split("_")[1][1:]) == variant["max_step"]:
                     print("Max step reached, training finished. Shutdown.")
                     break
 

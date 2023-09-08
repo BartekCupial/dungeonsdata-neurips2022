@@ -100,7 +100,6 @@ class BigCharEncoder(nn.Module):
         )
 
     def forward(self, message):
-
         B, C = message.shape
         x = F.one_hot(message.long(), 256).float()
         x = self.msg_encode(x)

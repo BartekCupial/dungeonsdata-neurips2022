@@ -8,7 +8,7 @@ name = globals()["script"][:-3]
 # params for all exps
 config = {
     "exp_tags": [name],
-    "connect":"0.0.0.0:4431",
+    "connect": "0.0.0.0:4431",
     "exp_set": "2G",
     "exp_point": "monk-APPO",
     "num_actor_cpus": 20,
@@ -16,7 +16,7 @@ config = {
     "character": "mon-hum-neu-mal",
     "use_checkpoint_actor": True,
     "use_kickstarting": True,
-    'kickstarting_path': "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/monk-AA-BC/checkpoint_v60242.tar"
+    "kickstarting_path": "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/monk-AA-BC/checkpoint_v60242.tar",
 }
 
 # params different between exps
@@ -25,14 +25,16 @@ params_grid = [
     {
         "unfreeze_actor_steps": [unfreeze_step],
         "group": [f"{name}_{unfreeze_step}M_{i}"],
-    } for i in range(6,10)
+    }
+    for i in range(6, 10)
 ]
 unfreeze_step = 10_000_000
 params_grid += [
     {
         "unfreeze_actor_steps": [unfreeze_step],
         "group": [f"{name}_{unfreeze_step}M_{i}"],
-    } for i in range(6,10)
+    }
+    for i in range(6, 10)
 ]
 
 experiments_list = create_experiments_helper(

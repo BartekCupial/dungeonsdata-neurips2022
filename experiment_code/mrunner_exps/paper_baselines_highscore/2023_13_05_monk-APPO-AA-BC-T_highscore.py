@@ -1,6 +1,9 @@
 from random_word import RandomWords
 
-from mrunner.helpers.specification_helper import create_experiments_helper, get_combinations
+from mrunner.helpers.specification_helper import (
+    create_experiments_helper,
+    get_combinations,
+)
 
 
 name = globals()["script"][:-3]
@@ -8,7 +11,7 @@ name = globals()["script"][:-3]
 # params for all exps
 config = {
     "exp_tags": [name],
-    "connect":"0.0.0.0:4431",
+    "connect": "0.0.0.0:4431",
     "exp_set": "2G",
     "exp_point": "monk-APPO-AA-BC",
     "num_actor_cpus": 20,
@@ -25,16 +28,20 @@ config = {
 # params different between exps
 params_grid = [
     {
-        "seed":  list(range(5)),
+        "seed": list(range(5)),
         "supervised_loss": [0.5],
         # load from checkpoint
         "unfreeze_actor_steps": [0],
         "use_checkpoint_actor": [True],
-        "model_checkpoint_path": ["/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/10_05-09_22-awesome_heisenberg/monk-aa-bc-deep_hp0i_10/checkpoint/hackrl/nle/monk-AA-BC_deep_10/checkpoint.tar"],
+        "model_checkpoint_path": [
+            "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/10_05-09_22-awesome_heisenberg/monk-aa-bc-deep_hp0i_10/checkpoint/hackrl/nle/monk-AA-BC_deep_10/checkpoint.tar"
+        ],
         # log forgetting
         "log_forgetting": [True],
         "forgetting_dataset": ["bc_midscore"],
-        "kickstarting_path": ["/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/10_05-09_22-awesome_heisenberg/monk-aa-bc-deep_hp0i_10/checkpoint/hackrl/nle/monk-AA-BC_deep_10/checkpoint.tar"],
+        "kickstarting_path": [
+            "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/10_05-09_22-awesome_heisenberg/monk-aa-bc-deep_hp0i_10/checkpoint/hackrl/nle/monk-AA-BC_deep_10/checkpoint.tar"
+        ],
     },
 ]
 

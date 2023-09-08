@@ -40,7 +40,7 @@ def create_dataframe(filters):
             elif isinstance(value, list):
                 if key == "returns":
                     key = "return"
-                
+
                 df[f"eval/mean_episode_{key}"] = np.mean(value)
                 df[f"eval/std_episode_{key}"] = np.std(value)
                 df[f"eval/median_episode_{key}"] = np.median(value)
@@ -91,6 +91,7 @@ def main(variant):
             log_group(group, df, config)
         except Exception as e:
             print(e)
+
 
 if __name__ == "__main__":
     args = vars(parse_args())

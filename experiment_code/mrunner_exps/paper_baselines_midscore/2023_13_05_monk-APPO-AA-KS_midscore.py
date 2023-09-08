@@ -1,6 +1,9 @@
 from random_word import RandomWords
 
-from mrunner.helpers.specification_helper import create_experiments_helper, get_combinations
+from mrunner.helpers.specification_helper import (
+    create_experiments_helper,
+    get_combinations,
+)
 
 
 name = globals()["script"][:-3]
@@ -8,7 +11,7 @@ name = globals()["script"][:-3]
 # params for all exps
 config = {
     "exp_tags": [name],
-    "connect":"0.0.0.0:4431",
+    "connect": "0.0.0.0:4431",
     "exp_set": "2G",
     "exp_point": "monk-APPO-AA-KS",
     "num_actor_cpus": 20,
@@ -17,7 +20,7 @@ config = {
     "character": "mon-hum-neu-mal",
     "use_checkpoint_actor": False,
     "kickstarting_loss": 0.1,
-    "use_kickstarting": True, 
+    "use_kickstarting": True,
     "kickstarting_path": "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/10_05-09_22-awesome_heisenberg/monk-aa-bc-deep_hp0i_5/checkpoint/hackrl/nle/monk-AA-BC_deep_5/checkpoint.tar",
 }
 
@@ -25,7 +28,7 @@ config = {
 # params different between exps
 params_grid = [
     {
-        "seed":  list(range(5)),
+        "seed": list(range(5)),
         "kickstarting_loss": [0.5],
         # log forgetting
         "log_forgetting": [True],

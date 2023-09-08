@@ -75,7 +75,6 @@ def test(_):
 
 
 if __name__ == "__main__":
-
     with ThreadPoolExecutor(max_workers=10) as tp:
 
         def fn(_):

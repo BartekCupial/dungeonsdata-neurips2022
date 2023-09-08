@@ -7,7 +7,7 @@ class GoldScore:
     def __init__(self):
         self.score = 0
 
-    def accumulate_reward(self, env, last_observation, observation, end_status):
+    def reward(self, env, last_observation, observation, end_status):
         old_blstats = last_observation[env._blstats_index]
         blstats = observation[env._blstats_index]
 
@@ -22,7 +22,7 @@ class EatingScore:
     def __init__(self):
         self.score = 0
 
-    def accumulate_reward(self, env, last_observation, observation, end_status):
+    def reward(self, env, last_observation, observation, end_status):
         old_internal = last_observation[env._internal_index]
         internal = observation[env._internal_index]
 
@@ -35,7 +35,7 @@ class ScoutScore:
         self.score = 0
         self.dungeon_explored = {}
 
-    def accumulate_reward(self, env, last_observation, observation, end_status):
+    def reward(self, env, last_observation, observation, end_status):
         glyphs = observation[env._glyph_index]
         blstats = observation[env._blstats_index]
 
@@ -62,7 +62,7 @@ class StaircaseScore:
     def __init__(self):
         self.score = 0
 
-    def accumulate_reward(self, env, last_observation, observation, end_status):
+    def reward(self, env, last_observation, observation, end_status):
         internal = observation[env._internal_index]
         stairs_down = internal[4]
 
@@ -79,7 +79,7 @@ class StaircasePetScore:
     def __init__(self):
         self.score = 0
 
-    def accumulate_reward(self, env, last_observation, observation, end_status):
+    def reward(self, env, last_observation, observation, end_status):
         internal = observation[env._internal_index]
         stairs_down = internal[4]
 

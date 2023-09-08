@@ -20,6 +20,7 @@ def combine_config_with_defaults(config):
     res.update(config)
     return res
 
+
 name = globals()["script"][:-3]
 
 # params for all exps
@@ -37,21 +38,49 @@ config = {
 config = combine_config_with_defaults(config)
 
 
-aa_bc = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-condescending_turing")
-appo = Path("/net/pr2/projects/plgrid/plgg_pw_crl/mostaszewski/mrunner_scratch/nle/03_05-13_31-relaxed_cori")
-appo_t = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-priceless_meninsky")
-appo_aa_ks = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-loving_feynman")
-appo_aa_ks_t = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-modest_goldstine")
-appo_aa_kl = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/13_05-12_25-sharp_dubinsky")
-appo_aa_kl_t = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-pedantic_hawking")
-appo_aa_bc = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-musing_kilby")
-appo_aa_bc_t = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-nervous_wiles")
+aa_bc = Path(
+    "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-condescending_turing"
+)
+appo = Path(
+    "/net/pr2/projects/plgrid/plgg_pw_crl/mostaszewski/mrunner_scratch/nle/03_05-13_31-relaxed_cori"
+)
+appo_t = Path(
+    "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-priceless_meninsky"
+)
+appo_aa_ks = Path(
+    "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-loving_feynman"
+)
+appo_aa_ks_t = Path(
+    "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-modest_goldstine"
+)
+appo_aa_kl = Path(
+    "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/13_05-12_25-sharp_dubinsky"
+)
+appo_aa_kl_t = Path(
+    "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-pedantic_hawking"
+)
+appo_aa_bc = Path(
+    "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-musing_kilby"
+)
+appo_aa_bc_t = Path(
+    "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-nervous_wiles"
+)
 
-aa_bc_deep = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/10_05-09_22-awesome_heisenberg")
-appo_aa_ks_sweep_small = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/18_05-08_32-stupefied_beaver")
-appo_aa_ks_sweep_decay = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/19_05-15_27-gifted_hugle")
-appo_aa_ewc = Path("/net/pr2/projects/plgrid/plgg_pw_crl/mbortkiewicz/mrunner_scratch/nle/20_05-17_34-cranky_mayer")
-appo_aa_ewc2 = Path("/net/pr2/projects/plgrid/plgg_pw_crl/mbortkiewicz/mrunner_scratch/nle/21_05-14_00-silly_lumiere")
+aa_bc_deep = Path(
+    "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/10_05-09_22-awesome_heisenberg"
+)
+appo_aa_ks_sweep_small = Path(
+    "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/18_05-08_32-stupefied_beaver"
+)
+appo_aa_ks_sweep_decay = Path(
+    "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/19_05-15_27-gifted_hugle"
+)
+appo_aa_ewc = Path(
+    "/net/pr2/projects/plgrid/plgg_pw_crl/mbortkiewicz/mrunner_scratch/nle/20_05-17_34-cranky_mayer"
+)
+appo_aa_ewc2 = Path(
+    "/net/pr2/projects/plgrid/plgg_pw_crl/mbortkiewicz/mrunner_scratch/nle/21_05-14_00-silly_lumiere"
+)
 
 
 # params different between exps
@@ -82,4 +111,4 @@ experiments_list = create_experiments_helper(
     exclude=["checkpoint"],
     base_config=config,
     params_grid=params_grid,
-) 
+)

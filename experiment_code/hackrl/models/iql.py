@@ -32,10 +32,14 @@ class IQL(torch.nn.Module):
             self.iql_net.initial_state(*args, **kwargs),
             self.target_iql_net.initial_state(*args, **kwargs),
         )
-        
+
     def update_target_critic(self):
-        for target_param, local_param in zip(self.target_iql_net.parameters(), self.iql_net.parameters()):
-            target_param.data.copy_(self.tau*local_param.data + (1.0-self.tau)*target_param.data)
+        for target_param, local_param in zip(
+            self.target_iql_net.parameters(), self.iql_net.parameters()
+        ):
+            target_param.data.copy_(
+                self.tau * local_param.data + (1.0 - self.tau) * target_param.data
+            )
 
     def forward(self, inputs, core_state):
         inputs = nest.map(lambda x: x.to(self.device), inputs)
@@ -53,4 +57,3 @@ class IQL(torch.nn.Module):
         iql_output["target_q2"] = target_iql_output["q2"]
 
         return iql_output, (iql_core, target_iql_core)
-        

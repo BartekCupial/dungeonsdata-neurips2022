@@ -22,6 +22,7 @@ def combine_config_with_defaults(config):
     res.update(config)
     return res
 
+
 name = globals()["script"][:-3]
 # name = "local"
 
@@ -38,9 +39,15 @@ config = {
 config = combine_config_with_defaults(config)
 
 
-aa_bc = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-condescending_turing")
-appo_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_02-priceless_meninsky")
-appo_aa_kl_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-pedantic_hawking")
+aa_bc = Path(
+    "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-condescending_turing"
+)
+appo_t = Path(
+    "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_02-priceless_meninsky"
+)
+appo_aa_kl_t = Path(
+    "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-pedantic_hawking"
+)
 
 save_root_path = Path("/net/ascratch/people/plgbartekcupial")
 
@@ -63,7 +70,8 @@ params_grid = [
         "checkpoint_dir": paths,
         "gameloaddir": [[None] * 1000],
         "name": [f"save_1"],
-    } for paths in cpaths
+    }
+    for paths in cpaths
 ]
 
 

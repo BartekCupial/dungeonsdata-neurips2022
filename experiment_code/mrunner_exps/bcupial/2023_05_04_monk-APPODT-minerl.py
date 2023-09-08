@@ -1,6 +1,9 @@
 from pathlib import Path
 
-from mrunner.helpers.specification_helper import create_experiments_helper, get_combinations
+from mrunner.helpers.specification_helper import (
+    create_experiments_helper,
+    get_combinations,
+)
 from random_word import RandomWords
 
 
@@ -9,12 +12,12 @@ name = globals()["script"][:-3]
 # params for all exps
 config = {
     "exp_tags": [name],
-    "connect":"0.0.0.0:4431",
+    "connect": "0.0.0.0:4431",
     "exp_set": "2G",
     "exp_point": "monk-APPODT",
     "num_actor_cpus": 20,
     "total_steps": 2_000_000_000,
-    'group': "monk-APPODT",
+    "group": "monk-APPODT",
     "character": "mon-hum-neu-mal",
     "model": "DecisionTransformer",
     "use_timesteps": True,
@@ -27,13 +30,10 @@ config = {
     "hidden_dim": 512,
     "warmup_steps": 10000,
     "weight_decay": 0.01,
-
-    "use_kickstarting": True, 
+    "use_kickstarting": True,
     "kickstarting_path": "/tscratch/nle/30_04-06_07-relaxed_spence/2023-04-30-pretrain-no-returns_usal_1/checkpoint/hackrl/nle/2023_04_30_pretrain_no_returns_1/checkpoint.tar",
-
     "use_checkpoint_actor": True,
     "model_checkpoint_path": "/tscratch/nle/30_04-06_07-relaxed_spence/2023-04-30-pretrain-no-returns_usal_1/checkpoint/hackrl/nle/2023_04_30_pretrain_no_returns_1/checkpoint.tar",
-
     "use_returns": False,
 }
 
@@ -42,7 +42,6 @@ config = {
 params_grid = [
     {
         "num_actor_cpus": [20],
-
         "warmup_steps": [1],
         "adam_learning_rate": [0.00002],
         # "baseline_learning_rate": [0.001],
@@ -58,20 +57,17 @@ params_grid = [
         "kickstarting_loss": [0.2],
         "kickstarting_decay": [0.9995],
         "entropy_cost": [0.0],
-
         "ppg_sleep": [True],
         "ppg_sleep_sample_reuse": [6],
         "ppg_sleep_cycles": [2],
         "ppg_baseline_cost": [1.0],
         "ppg_kl_loss": [1.0],
-
         "n_layer": [3],
         "n_head": [4],
-        "seed": [0], # reduced number of seeds
+        "seed": [0],  # reduced number of seeds
     },
     {
         "num_actor_cpus": [20],
-
         "warmup_steps": [1],
         "adam_learning_rate": [0.00002],
         # "baseline_learning_rate": [0.001],
@@ -87,16 +83,14 @@ params_grid = [
         "kickstarting_loss": [0.2],
         "kickstarting_decay": [0.9995],
         "entropy_cost": [0.0],
-
         "ppg_sleep": [True],
         "ppg_sleep_sample_reuse": [6],
         "ppg_sleep_cycles": [2],
         "ppg_baseline_cost": [1.0],
         "ppg_kl_loss": [1.0],
-
         "n_layer": [3],
         "n_head": [4],
-        "seed": [0], # reduced number of seeds
+        "seed": [0],  # reduced number of seeds
     },
     # {
     #     "warmup_steps": [10000],
@@ -113,13 +107,11 @@ params_grid = [
     #     "appo_clip_policy": [0.01],
     #     "grad_norm_clipping": [4],
     #     "entropy_cost": [0.0],
-
     #     "ppg_sleep": [True],
     #     "ppg_sleep_sample_reuse": [6],
     #     "ppg_sleep_cycles": [2],
     #     "ppg_baseline_cost": [1.0],
     #     "ppg_kl_loss": [1.0],
-
     #     "n_layer": [3],
     #     "n_head": [4],
     #     "seed": [0], # reduced number of seeds

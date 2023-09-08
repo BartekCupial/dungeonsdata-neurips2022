@@ -31,6 +31,7 @@ from torch.nn import functional as F
 LOG_STD_MIN = -10.0
 LOG_STD_MAX = 2.0
 
+
 class MessageEncoder(nn.Module):
     def __init__(self):
         super(MessageEncoder, self).__init__()
@@ -94,7 +95,6 @@ class BLStatsEncoder(nn.Module):
         self.blstat_range = (-5, 5)
 
     def forward(self, blstats):
-
         norm_bls = torch.clip(
             blstats * self.normalization_stats,
             self.blstat_range[0],
@@ -244,12 +244,12 @@ class ChaoticDwarvenGPT5(nn.Module):
         super(ChaoticDwarvenGPT5, self).__init__()
 
         self.flags = flags
-        self.num_actions = len(action_space)    
+        self.num_actions = len(action_space)
 
         self.use_inverse_model = flags.use_inverse_model
         self.use_tty_only = flags.use_tty_only
         self.use_prev_action = flags.use_prev_action
-        
+
         if self.use_tty_only:
             self.topline_encoder = TopLineEncoder()
             self.bottomline_encoder = torch.jit.script(BottomLinesEncoder())
@@ -374,12 +374,12 @@ class DQNChaoticDwarvenGPT5(nn.Module):
         super(DQNChaoticDwarvenGPT5, self).__init__()
 
         self.flags = flags
-        self.num_actions = len(action_space)    
+        self.num_actions = len(action_space)
 
         self.use_inverse_model = flags.use_inverse_model
         self.use_tty_only = flags.use_tty_only
         self.use_prev_action = flags.use_prev_action
-        
+
         if self.use_tty_only:
             self.topline_encoder = TopLineEncoder()
             self.bottomline_encoder = torch.jit.script(BottomLinesEncoder())
@@ -496,12 +496,12 @@ class IQLChaoticDwarvenGPT5(nn.Module):
         super(IQLChaoticDwarvenGPT5, self).__init__()
 
         self.flags = flags
-        self.num_actions = len(action_space)    
+        self.num_actions = len(action_space)
 
         self.use_inverse_model = flags.use_inverse_model
         self.use_tty_only = flags.use_tty_only
         self.use_prev_action = flags.use_prev_action
-        
+
         if self.use_tty_only:
             self.topline_encoder = TopLineEncoder()
             self.bottomline_encoder = torch.jit.script(BottomLinesEncoder())
@@ -535,7 +535,7 @@ class IQLChaoticDwarvenGPT5(nn.Module):
 
         self.core = nn.LSTM(self.h_dim, self.hidden_dim, num_layers=1)
 
-        # TODO: double check architecture for all these, larger? more layers? tanh? 
+        # TODO: double check architecture for all these, larger? more layers? tanh?
         self.policy = nn.Linear(self.hidden_dim, self.num_actions)
         self.critic1 = nn.Linear(self.hidden_dim + self.num_actions, 1)
         self.critic2 = nn.Linear(self.hidden_dim + self.num_actions, 1)
@@ -626,7 +626,7 @@ class IQLChaoticDwarvenGPT5(nn.Module):
             policy_logits=policy_logits,
             action=action,
             value=value,
-            q1=q1, 
+            q1=q1,
             q2=q2,
             version=version,
         )

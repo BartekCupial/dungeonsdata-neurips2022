@@ -37,19 +37,27 @@ config = combine_config_with_defaults(config)
 # params different between exps
 params_grid = [
     {
-        "checkpoint_dir": ["/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-pedantic_hawking/2023-11-05-monk-appo-aa-kl-t_nmjx_0/checkpoint/hackrl/nle/2023_11_05_monk-APPO-AA-KL-T_0_stillroom/checkpoint.tar"],
+        "checkpoint_dir": [
+            "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-pedantic_hawking/2023-11-05-monk-appo-aa-kl-t_nmjx_0/checkpoint/hackrl/nle/2023_11_05_monk-APPO-AA-KL-T_0_stillroom/checkpoint.tar"
+        ],
         "savedir": ["/nle/nld-appo-aa-kl-t/nld_data"],
     },
     {
-        "checkpoint_dir": ["/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-modest_goldstine/2023-11-05-monk-appo-aa-ks-t_k8zh_0/checkpoint/hackrl/nle/2023_11_05_monk-APPO-AA-KS-T_0_hexapodal/checkpoint.tar"],
+        "checkpoint_dir": [
+            "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-modest_goldstine/2023-11-05-monk-appo-aa-ks-t_k8zh_0/checkpoint/hackrl/nle/2023_11_05_monk-APPO-AA-KS-T_0_hexapodal/checkpoint.tar"
+        ],
         "savedir": ["/nle/nld-appo-aa-ks-t/nld_data"],
     },
     {
-        "checkpoint_dir": ["/net/pr2/projects/plgrid/plgg_pw_crl/mostaszewski/mrunner_scratch/nle/03_05-13_31-relaxed_cori/monk-appo_4z1a_4/checkpoint/hackrl/nle/monk-APPO_4/checkpoint.tar"],
+        "checkpoint_dir": [
+            "/net/pr2/projects/plgrid/plgg_pw_crl/mostaszewski/mrunner_scratch/nle/03_05-13_31-relaxed_cori/monk-appo_4z1a_4/checkpoint/hackrl/nle/monk-APPO_4/checkpoint.tar"
+        ],
         "savedir": ["/nle/nld-appo/nld_data"],
     },
     {
-        "checkpoint_dir": ["/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-priceless_meninsky/2023-11-05-monk-appo-t_qphj_2/checkpoint/hackrl/nle/2023_11_05_monk-APPO-T_2_arsenetted/checkpoint.tar"],
+        "checkpoint_dir": [
+            "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-priceless_meninsky/2023-11-05-monk-appo-t_qphj_2/checkpoint/hackrl/nle/2023_11_05_monk-APPO-T_2_arsenetted/checkpoint.tar"
+        ],
         "savedir": ["/nle/nld-appo-t/nld_data"],
     },
 ]

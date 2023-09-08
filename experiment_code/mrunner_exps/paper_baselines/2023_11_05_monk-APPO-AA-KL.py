@@ -1,6 +1,9 @@
 from random_word import RandomWords
 
-from mrunner.helpers.specification_helper import create_experiments_helper, get_combinations
+from mrunner.helpers.specification_helper import (
+    create_experiments_helper,
+    get_combinations,
+)
 
 
 name = globals()["script"][:-3]
@@ -8,7 +11,7 @@ name = globals()["script"][:-3]
 # params for all exps
 config = {
     "exp_tags": [name],
-    "connect":"0.0.0.0:4431",
+    "connect": "0.0.0.0:4431",
     "exp_set": "2G",
     "exp_point": "monk-APPO-AA-KL",
     "num_actor_cpus": 20,
@@ -18,7 +21,7 @@ config = {
     "use_checkpoint_actor": False,
     "ttyrec_batch_size": 256,
     "kickstarting_loss_bc": 0.1,
-    "use_kickstarting_bc": True, 
+    "use_kickstarting_bc": True,
     "kickstarting_path": "/net/pr2/projects/plgrid/plgg_pw_crl/mostaszewski/monk-AA-BC/checkpoint.tar",
     "dataset": "bc1",
 }
@@ -27,7 +30,7 @@ config = {
 # params different between exps
 params_grid = [
     {
-        "seed":  list(range(5)),
+        "seed": list(range(5)),
         "kickstarting_loss_bc": [0.5],
         # log forgetting
         "log_forgetting": [True],

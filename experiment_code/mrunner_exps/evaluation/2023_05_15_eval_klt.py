@@ -20,6 +20,7 @@ def combine_config_with_defaults(config):
     res.update(config)
     return res
 
+
 name = globals()["script"][:-3]
 # name = "local"
 
@@ -38,13 +39,19 @@ config = {
 config = combine_config_with_defaults(config)
 
 
-aa_bc = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-condescending_turing")
+aa_bc = Path(
+    "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-condescending_turing"
+)
 # appo = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-cranky_fermi")
-appo_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_02-priceless_meninsky")
+appo_t = Path(
+    "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_02-priceless_meninsky"
+)
 # appo_aa_ks = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-loving_feynman")
 # appo_aa_ks_t = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-modest_goldstine")
 # appo_aa_kl = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-festive_perlman")
-appo_aa_kl_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-pedantic_hawking")
+appo_aa_kl_t = Path(
+    "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-pedantic_hawking"
+)
 # appo_aa_bc = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-musing_kilby")
 # appo_aa_bc_t = Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-nervous_wiles")
 
@@ -79,4 +86,4 @@ experiments_list = create_experiments_helper(
     exclude=["checkpoint"],
     base_config=config,
     params_grid=params_grid,
-) 
+)

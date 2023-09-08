@@ -2,7 +2,10 @@ from pathlib import Path
 from random_words import RandomWords
 
 
-from mrunner.helpers.specification_helper import create_experiments_helper, get_combinations
+from mrunner.helpers.specification_helper import (
+    create_experiments_helper,
+    get_combinations,
+)
 
 
 name = globals()["script"][:-3]
@@ -10,7 +13,7 @@ name = globals()["script"][:-3]
 # params for all exps
 config = {
     "exp_tags": [name],
-    "connect":"0.0.0.0:4431",
+    "connect": "0.0.0.0:4431",
     "exp_set": "2G",
     "exp_point": "monk-APPO-AA-KS",
     "num_actor_cpus": 20,
@@ -18,21 +21,23 @@ config = {
     "ttyrec_batch_size": 256,
     "kickstarting_loss": 0.1,
     "group": "monk-APPO-AA-KS",
-    "use_kickstarting": True, 
+    "use_kickstarting": True,
     "kickstarting_path": "/net/tscratch/people/plgmostaszewski/dungeonsdata-neurips2022/experiment_code/monk-AA-BC/checkpoint.tar",
     "character": "mon-hum-neu-mal",
-    "use_checkpoint_actor": False
+    "use_checkpoint_actor": False,
 }
-                    
+
 # params different between exps
 params_grid = [
     {
-        "seed":  list(range(1)),
+        "seed": list(range(1)),
         "kickstarting_loss": [0.2],
         "kickstarting_decay": [0.9995, 0.9996, 0.9996, 0.9997, 0.9998, 0.9999],
         "unfreeze_actor_steps": [50_000_000],
         "use_checkpoint_actor": [True],
-        "model_checkpoint_path": ["/net/tscratch/people/plgmostaszewski/dungeonsdata-neurips2022/experiment_code/monk-AA-BC/checkpoint.tar"],
+        "model_checkpoint_path": [
+            "/net/tscratch/people/plgmostaszewski/dungeonsdata-neurips2022/experiment_code/monk-AA-BC/checkpoint.tar"
+        ],
     },
 ]
 

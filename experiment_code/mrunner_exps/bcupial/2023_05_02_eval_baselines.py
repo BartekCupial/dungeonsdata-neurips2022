@@ -1,4 +1,7 @@
-from mrunner.helpers.specification_helper import create_experiments_helper, get_combinations
+from mrunner.helpers.specification_helper import (
+    create_experiments_helper,
+    get_combinations,
+)
 from random_word import RandomWords
 
 from hackrl.eval import parse_args
@@ -42,7 +45,7 @@ params_grid = [
             monk_appo_aa_bc_t,
             monk_appo_aa_ks,
             monk_appo_aa_ks_t,
-        ]
+        ],
     },
 ]
 
@@ -66,4 +69,4 @@ experiments_list = create_experiments_helper(
     exclude=["checkpoint"],
     base_config=args,
     params_grid=final_grid,
-) 
+)

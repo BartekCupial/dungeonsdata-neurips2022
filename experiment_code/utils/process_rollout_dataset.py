@@ -1,4 +1,4 @@
-import argparse 
+import argparse
 
 from shutil import copyfile
 from pathlib import Path

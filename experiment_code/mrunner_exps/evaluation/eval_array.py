@@ -13,6 +13,7 @@ PARSE_ARGS_DICT = {
     "rollout": rollout_parse_args,
 }
 
+
 def combine_config_with_defaults(config):
     run_kind = config["run_kind"]
     res = vars(PARSE_ARGS_DICT[run_kind]([]))
@@ -57,4 +58,4 @@ experiments_list = create_experiments_helper(
     exclude=["checkpoint"],
     base_config=config,
     params_grid=params_grid,
-) 
+)

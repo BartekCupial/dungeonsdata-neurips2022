@@ -20,6 +20,7 @@ def combine_config_with_defaults(config):
     res.update(config)
     return res
 
+
 name = globals()["script"][:-3]
 
 # params for all exps
@@ -40,20 +41,22 @@ params_grid = [
         ],
         "env": ["challenge"],
         "wandb": [False],
-        "gameloaddir": [[
-            "/home/bartek/Workspace/autoascend/saves2/ahudajsetduj", 
-            "/home/bartek/Workspace/autoascend/saves2/gvmxflekyghg",
-            "/home/bartek/Workspace/autoascend/saves2/amfzqwtcuwct",
-            "/home/bartek/Workspace/autoascend/saves2/awoekdexqiid",
-            "/home/bartek/Workspace/autoascend/saves2/bckndsihafsr",
-            "/home/bartek/Workspace/autoascend/saves2/bgnsgmmpfiev",
-            # None,
-            # None,
-            # None,
-            # None,
-            # None,
-            # None,
-            ]],
+        "gameloaddir": [
+            [
+                "/home/bartek/Workspace/autoascend/saves2/ahudajsetduj",
+                "/home/bartek/Workspace/autoascend/saves2/gvmxflekyghg",
+                "/home/bartek/Workspace/autoascend/saves2/amfzqwtcuwct",
+                "/home/bartek/Workspace/autoascend/saves2/awoekdexqiid",
+                "/home/bartek/Workspace/autoascend/saves2/bckndsihafsr",
+                "/home/bartek/Workspace/autoascend/saves2/bgnsgmmpfiev",
+                # None,
+                # None,
+                # None,
+                # None,
+                # None,
+                # None,
+            ]
+        ],
         # "gameloaddir": ["/home/bartek/Workspace/autoascend/saves2/ahudajsetduj"],
         "render": [False],
         "device": ["cpu"],

@@ -1,4 +1,4 @@
-import argparse 
+import argparse
 import json
 import ast
 from pathlib import Path
@@ -14,7 +14,7 @@ from nle.dataset import populate_db
 
 def get_dataset_stats(dataset_name, dbfilename=db.DB):
     sql_args = (dataset_name,)
-    
+
     sql = """
     SELECT games.gameid, games.points, games.turns
     FROM games
@@ -32,7 +32,9 @@ def get_episode_stats(entity, project, run_id):
     run = api.run(f"{entity}/{project}/{run_id}")
 
     # print summary of the run just to confirm that this is the run we are interested about
-    print(json.dumps(ast.literal_eval(run.summary.__repr__()), sort_keys=True, indent=4))
+    print(
+        json.dumps(ast.literal_eval(run.summary.__repr__()), sort_keys=True, indent=4)
+    )
 
     artifact = api.artifact(f"{entity}/{project}/run-{run_id}-frame:v0")
     artifact_path = artifact.download()

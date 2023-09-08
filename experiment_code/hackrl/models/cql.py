@@ -41,7 +41,7 @@ class CQL(torch.nn.Module):
             self.qnet.initial_state(*args, **kwargs),
             self.target_qnet.initial_state(*args, **kwargs),
         )
-        
+
     def forward(self, inputs, core_state):
         inputs = nest.map(lambda x: x.to(self.device), inputs)
         qnet_core, target_qnet_core = core_state
@@ -71,13 +71,8 @@ class CQL(torch.nn.Module):
                 qnet_output["action"] = torch.randint(
                     0, self.num_actions, qnet_output["action"].shape
                 )
-        
+
         if self.num_updates % self.target_update == 0:
             self.target_qnet.load_state_dict(self.qnet.state_dict())
 
-
         return qnet_output, (qnet_core, target_qnet_core)
-
-
-
-        

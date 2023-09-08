@@ -26,7 +26,6 @@ kwargs = dict(
 
 dataset = dataset.TtyrecDataset("autoascend", **kwargs)
 for i, mb in enumerate(dataset):
-
     tty_chars = mb["tty_chars"][0][0]
     tty_colors = mb["tty_colors"][0][0]
     tty_cursor = mb["tty_cursor"][0][0]

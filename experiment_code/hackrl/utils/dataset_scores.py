@@ -3,7 +3,7 @@ from nle.dataset import db
 
 def get_dataset_scores(dataset_name, dbfilename=db.DB):
     sql_args = (dataset_name,)
-    
+
     sql = """
     SELECT games.gameid, games.points
     FROM games
@@ -11,6 +11,5 @@ def get_dataset_scores(dataset_name, dbfilename=db.DB):
     WHERE datasets.dataset_name=?"""
 
     with db.connect(dbfilename) as conn:
-
         scores = dict(list(conn.execute(sql, sql_args)))
     return scores

@@ -117,7 +117,6 @@ class TtyrecEnvPool:
             ).to(self.device)
             while True:
                 for i, mb in enumerate(dataset):
-
                     if i == 0:
                         # create torch tensors from first minibatch
                         screen_image = mb_tensors["screen_image"].numpy()
@@ -147,7 +146,7 @@ class TtyrecEnvPool:
                         "done": mb_tensors["done"].bool(),
                         "timesteps": mb_tensors["timestamps"].float(),
                         # "max_scores": max_scores[mb["gameids"].flatten()].reshape(mb["gameids"].shape).float(),
-                        "mask": torch.ones_like(mb_tensors["timestamps"]).bool()
+                        "mask": torch.ones_like(mb_tensors["timestamps"]).bool(),
                     }
 
                     if "keypresses" in mb_tensors:
@@ -173,7 +172,6 @@ class TtyrecEnvPool:
             prev_hs = nest.map(lambda x: x.to(self.device), prev_hs)
             prev_state = None
             for mb in generator:
-
                 if prev_state is None:
                     aug_mb = mb
                 else:
@@ -227,7 +225,7 @@ class TtyrecEnvPool:
 
 
 def make_ttyrec_envpool(threadpool, dataset_name, flags):
-    dbfilename = flags.dbfilename 
+    dbfilename = flags.dbfilename
 
     if not os.path.isfile(dbfilename):
         alt_path = "/nle/nld-nao"
@@ -629,7 +627,9 @@ def create_optimizer(model):
 
 
 def create_scheduler(optimizer):
-    return torch.optim.lr_scheduler.LambdaLR(optimizer, lambda steps: min((steps + 1) / FLAGS.warmup_steps, 1))
+    return torch.optim.lr_scheduler.LambdaLR(
+        optimizer, lambda steps: min((steps + 1) / FLAGS.warmup_steps, 1)
+    )
 
 
 def compute_gradients(data, sleep_data, learner_state, stats):
@@ -765,22 +765,29 @@ def compute_gradients(data, sleep_data, learner_state, stats):
     total_loss += entropy_loss + pg_loss + baseline_loss
 
     if FLAGS.ppg_sleep:
-        for batch_idx in np.random.randint(len(sleep_data), size=FLAGS.ppg_sleep_cycles):
+        for batch_idx in np.random.randint(
+            len(sleep_data), size=FLAGS.ppg_sleep_cycles
+        ):
             sleep_batch = sleep_data[batch_idx]
-            
+
             sleep_env_outputs = sleep_batch["env_outputs"]
             sleep_initial_core_state = sleep_batch["initial_core_state"]
 
-            sleep_learner_outputs, _ = model(sleep_env_outputs, sleep_initial_core_state)
+            sleep_learner_outputs, _ = model(
+                sleep_env_outputs, sleep_initial_core_state
+            )
             sleep_actor_outputs = sleep_batch["actor_outputs"]
-
 
             sleep_rewards = sleep_env_outputs["reward"] * FLAGS.reward_scale
             if FLAGS.rms_reward_norm:
-                reward_std = stats["mean_square_discounted_running_reward"].mean() ** 0.5
+                reward_std = (
+                    stats["mean_square_discounted_running_reward"].mean() ** 0.5
+                )
                 sleep_rewards /= max(0.01, reward_std)
             if FLAGS.reward_clip:
-                sleep_rewards = torch.clip(sleep_rewards, -FLAGS.reward_clip, FLAGS.reward_clip)
+                sleep_rewards = torch.clip(
+                    sleep_rewards, -FLAGS.reward_clip, FLAGS.reward_clip
+                )
 
             sleep_discounts = (~sleep_env_outputs["done"]).float() * FLAGS.discounting
             sleep_lambdas = (~sleep_env_outputs["done"]).float() * FLAGS.lambda_gae
@@ -802,7 +809,7 @@ def compute_gradients(data, sleep_data, learner_state, stats):
 
             ppg_kl_loss = FLAGS.ppg_kl_loss * compute_kickstarting_loss(
                 sleep_learner_outputs["policy_logits"],
-                sleep_actor_outputs["policy_logits"]
+                sleep_actor_outputs["policy_logits"],
             )
 
             ppg_baseline_loss = FLAGS.ppg_baseline_cost * compute_baseline_loss(
@@ -880,7 +887,7 @@ def compute_gradients(data, sleep_data, learner_state, stats):
                 kick_predictions["kick_policy_logits"],
             )
             stats["forgetting_loss"] += forgetting_loss.item()
-            
+
             # Only call step when you are done with ttyrec_data - it may get overwritten
             FORGETTING_ENVPOOL.step()
 
@@ -965,6 +972,7 @@ def uid():
 
 
 omegaconf.OmegaConf.register_new_resolver("uid", uid, use_cache=True)
+
 
 # Override config_path via --config_path.
 @hydra.main(config_path=".", config_name="config")
@@ -1169,9 +1177,12 @@ def main(cfg):
         if FLAGS.score_target_strategy == "max":
             score_target = np.max(list(TTYREC_ENVPOOL.dataset_scores.values()))
         elif FLAGS.score_target_strategy == "mean":
-            score_target = np.mean(list(TTYREC_ENVPOOL.dataset_scores.values())) 
+            score_target = np.mean(list(TTYREC_ENVPOOL.dataset_scores.values()))
         elif FLAGS.score_target_strategy == "percentile":
-            score_target = np.percentile(list(TTYREC_ENVPOOL.dataset_scores.values()), q=FLAGS.score_target_percentile)
+            score_target = np.percentile(
+                list(TTYREC_ENVPOOL.dataset_scores.values()),
+                q=FLAGS.score_target_percentile,
+            )
         elif FLAGS.score_target_strategy == "value":
             score_target = FLAGS.score_target_value
         else:
@@ -1211,7 +1222,11 @@ def main(cfg):
 
         steps = learner_state.global_stats["env_train_steps"].result()
         if not unfreezed and steps > FLAGS.unfreeze_actor_steps:
-            if FLAGS.use_kickstarting or FLAGS.use_kickstarting_bc or FLAGS.log_forgetting:
+            if (
+                FLAGS.use_kickstarting
+                or FLAGS.use_kickstarting_bc
+                or FLAGS.log_forgetting
+            ):
                 hackrl.models.unfreeze(model.student)
             else:
                 hackrl.models.unfreeze(model)
@@ -1295,11 +1310,16 @@ def main(cfg):
                 learner_state.last_checkpoint = learner_state.train_time
                 save_checkpoint(checkpoint_path, learner_state)
             if steps // FLAGS.checkpoint_save_every > checkpoint_steps:
-                save_checkpoint(                
+                save_checkpoint(
                     os.path.join(
-                        FLAGS.savedir, "checkpoint_v%d" % ((steps // FLAGS.checkpoint_save_every) * FLAGS.checkpoint_save_every)
-                    ), 
-                    learner_state
+                        FLAGS.savedir,
+                        "checkpoint_v%d"
+                        % (
+                            (steps // FLAGS.checkpoint_save_every)
+                            * FLAGS.checkpoint_save_every
+                        ),
+                    ),
+                    learner_state,
                 )
                 checkpoint_steps = steps // FLAGS.checkpoint_save_every
 
@@ -1366,11 +1386,15 @@ def main(cfg):
                 env_state.initial_core_state = prev_core_state
                 env_state.time_batcher.stack(last_data)
     if is_connected and is_leader:
-        save_checkpoint(                
+        save_checkpoint(
             os.path.join(
-                FLAGS.savedir, "checkpoint_v%d" % ((steps // FLAGS.checkpoint_save_every) * FLAGS.checkpoint_save_every)
-            ), 
-            learner_state
+                FLAGS.savedir,
+                "checkpoint_v%d"
+                % (
+                    (steps // FLAGS.checkpoint_save_every) * FLAGS.checkpoint_save_every
+                ),
+            ),
+            learner_state,
         )
     if tp:
         tp.shutdown()
@@ -1381,7 +1405,7 @@ def main(cfg):
 
 if __name__ == "__main__":
     tempdir = tempfile.mkdtemp()
-    tempfile.tempdir = tempdir 
+    tempfile.tempdir = tempdir
 
     try:
         main()

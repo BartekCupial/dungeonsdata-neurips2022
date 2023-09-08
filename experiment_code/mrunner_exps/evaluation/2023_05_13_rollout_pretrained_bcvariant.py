@@ -37,15 +37,21 @@ config = combine_config_with_defaults(config)
 # params different between exps
 params_grid = [
     {
-        "checkpoint_dir": ["/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/10_05-09_22-awesome_heisenberg/monk-aa-bc-deep_hp0i_0/checkpoint/hackrl/nle/monk-AA-BC_deep_0/checkpoint.tar"],
+        "checkpoint_dir": [
+            "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/10_05-09_22-awesome_heisenberg/monk-aa-bc-deep_hp0i_0/checkpoint/hackrl/nle/monk-AA-BC_deep_0/checkpoint.tar"
+        ],
         "savedir": ["/nle/nld-bc-deep/nld_data"],
     },
     {
-        "checkpoint_dir": ["/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/10_05-09_22-awesome_heisenberg/monk-aa-bc-deep_hp0i_5/checkpoint/hackrl/nle/monk-AA-BC_deep_5/checkpoint.tar"],
+        "checkpoint_dir": [
+            "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/10_05-09_22-awesome_heisenberg/monk-aa-bc-deep_hp0i_5/checkpoint/hackrl/nle/monk-AA-BC_deep_5/checkpoint.tar"
+        ],
         "savedir": ["/nle/nld-bc-midscore/nld_data"],
     },
     {
-        "checkpoint_dir": ["/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/10_05-09_22-awesome_heisenberg/monk-aa-bc-deep_hp0i_10/checkpoint/hackrl/nle/monk-AA-BC_deep_10/checkpoint.tar"],
+        "checkpoint_dir": [
+            "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/10_05-09_22-awesome_heisenberg/monk-aa-bc-deep_hp0i_10/checkpoint/hackrl/nle/monk-AA-BC_deep_10/checkpoint.tar"
+        ],
         "savedir": ["/nle/nld-bc-highscore/nld_data"],
     },
 ]

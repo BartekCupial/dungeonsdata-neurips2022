@@ -22,6 +22,7 @@ def combine_config_with_defaults(config):
     res.update(config)
     return res
 
+
 name = globals()["script"][:-3]
 # name = "local"
 
@@ -38,9 +39,15 @@ config = {
 config = combine_config_with_defaults(config)
 
 
-aa_bc = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-condescending_turing")
-appo_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_02-priceless_meninsky")
-appo_aa_kl_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-pedantic_hawking")
+aa_bc = Path(
+    "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-condescending_turing"
+)
+appo_t = Path(
+    "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_02-priceless_meninsky"
+)
+appo_aa_kl_t = Path(
+    "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-pedantic_hawking"
+)
 
 save_root_path = Path("/net/ascratch/people/plgbartekcupial")
 
@@ -53,7 +60,7 @@ for path in ckpt_paths:
     paths.append(Path(path) / "checkpoint.tar")
 
 save_paths = []
-for i in range(2, 10): # todo 10, 11
+for i in range(2, 10):  # todo 10, 11
     folder = f"saves{i}"
     saves = get_save_paths(save_root_path / folder, host="ares.cyfronet.pl")
     # limit to 1000 saves
@@ -66,7 +73,8 @@ params_grid = [
         "checkpoint_dir": paths,
         "gameloaddir": [spaths],
         "name": [f"save_{e}"],
-    } for e, spaths in enumerate(save_paths, 2)
+    }
+    for e, spaths in enumerate(save_paths, 2)
 ]
 
 

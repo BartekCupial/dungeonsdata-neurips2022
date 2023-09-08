@@ -20,6 +20,7 @@ def combine_config_with_defaults(config):
     res.update(config)
     return res
 
+
 name = globals()["script"][:-3]
 # name = "local"
 
@@ -39,12 +40,24 @@ config = combine_config_with_defaults(config)
 
 
 ckpt_paths = [
-    Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-priceless_meninsky/2023-11-05-monk-appo-t_qphj_0/checkpoint/hackrl/nle/2023_11_05_monk-APPO-T_0_veratrine"),
-    Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-priceless_meninsky/2023-11-05-monk-appo-t_qphj_1/checkpoint/hackrl/nle/2023_11_05_monk-APPO-T_1_polyzoarial"),
-    Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-priceless_meninsky/2023-11-05-monk-appo-t_qphj_3/checkpoint/hackrl/nle/2023_11_05_monk-APPO-T_3_maizes"),
-    Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-priceless_meninsky/2023-11-05-monk-appo-t_qphj_4/checkpoint/hackrl/nle/2023_11_05_monk-APPO-T_4_sandpiper"),
-    Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-pedantic_hawking/2023-11-05-monk-appo-aa-kl-t_nmjx_0/checkpoint/hackrl/nle/2023_11_05_monk-APPO-AA-KL-T_0_stillroom"),
-    Path("/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-modest_goldstine/2023-11-05-monk-appo-aa-ks-t_k8zh_2/checkpoint/hackrl/nle/2023_11_05_monk-APPO-AA-KS-T_2_postglenoid"),
+    Path(
+        "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-priceless_meninsky/2023-11-05-monk-appo-t_qphj_0/checkpoint/hackrl/nle/2023_11_05_monk-APPO-T_0_veratrine"
+    ),
+    Path(
+        "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-priceless_meninsky/2023-11-05-monk-appo-t_qphj_1/checkpoint/hackrl/nle/2023_11_05_monk-APPO-T_1_polyzoarial"
+    ),
+    Path(
+        "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-priceless_meninsky/2023-11-05-monk-appo-t_qphj_3/checkpoint/hackrl/nle/2023_11_05_monk-APPO-T_3_maizes"
+    ),
+    Path(
+        "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_02-priceless_meninsky/2023-11-05-monk-appo-t_qphj_4/checkpoint/hackrl/nle/2023_11_05_monk-APPO-T_4_sandpiper"
+    ),
+    Path(
+        "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-pedantic_hawking/2023-11-05-monk-appo-aa-kl-t_nmjx_0/checkpoint/hackrl/nle/2023_11_05_monk-APPO-AA-KL-T_0_stillroom"
+    ),
+    Path(
+        "/net/tscratch/people/plgbartekcupial/mrunner_scratch/nle/12_05-09_03-modest_goldstine/2023-11-05-monk-appo-aa-ks-t_k8zh_2/checkpoint/hackrl/nle/2023_11_05_monk-APPO-AA-KS-T_2_postglenoid"
+    ),
 ]
 
 paths = []
@@ -70,4 +83,4 @@ experiments_list = create_experiments_helper(
     exclude=["checkpoint"],
     base_config=config,
     params_grid=params_grid,
-) 
+)

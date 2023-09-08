@@ -1,18 +1,21 @@
 from pathlib import Path
 
-from mrunner.helpers.specification_helper import create_experiments_helper, get_combinations
+from mrunner.helpers.specification_helper import (
+    create_experiments_helper,
+    get_combinations,
+)
 
 
 name = globals()["script"][:-3]
 
 # params for all exps
 config = {
-    "connect":"0.0.0.0:4431",
+    "connect": "0.0.0.0:4431",
     "exp_set": "2G",
     "exp_point": "@-APPO",
     "num_actor_cpus": 20,
     "total_steps": 2_000_000_000,
-    'group': "@-APPO",
+    "group": "@-APPO",
 }
 
 

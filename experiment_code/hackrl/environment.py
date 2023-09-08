@@ -45,7 +45,7 @@ def create_env(flags, savedir=None, save_ttyrec_every=0, gameloaddir=None):
         gameloaddir=gameloaddir,
     )
     if flags.env.name == "challenge":
-        kwargs["no_progress_timeout"]=150
+        kwargs["no_progress_timeout"] = 150
 
     if flags.env in ("staircase", "pet", "oracle"):
         kwargs.update(reward_win=flags.reward_win, reward_lose=flags.reward_lose)

@@ -1,5 +1,3 @@
-
-   
 import concurrent
 import copy
 import dataclasses
@@ -99,7 +97,6 @@ class TtyrecEnvPool:
             ).to(self.device)
             while True:
                 for i, mb in enumerate(dataset):
-
                     if i == 0:
                         # create torch tensors from first minibatch
                         screen_image = mb_tensors["screen_image"].numpy()
@@ -118,7 +115,7 @@ class TtyrecEnvPool:
                         cursor_uint8[i],
                         self.char_array,
                         screen_image[i],
-                        self.crop_dim
+                        self.crop_dim,
                     )
                     list(self.threadpool.map(convert, range(self.ttyrec_batch_size)))
 
@@ -675,7 +672,7 @@ def compute_gradients_dqn(data, learner_state, stats):
 
     model = learner_state.model
     model.train()
-    total_loss = 0 
+    total_loss = 0
 
     if FLAGS.dqn_loss == "huber":
         criterion = nn.SmoothL1Loss()
@@ -722,7 +719,9 @@ def compute_gradients_dqn(data, learner_state, stats):
         next_state_values *= (~dones).float()
         expected_state_action_values = (next_state_values * FLAGS.discounting) + rewards
 
-        dqn_loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))        
+        dqn_loss = criterion(
+            state_action_values, expected_state_action_values.unsqueeze(1)
+        )
         total_loss += dqn_loss
         stats["dqn_loss"] += dqn_loss.item()
 
@@ -733,17 +732,17 @@ def compute_gradients_dqn(data, learner_state, stats):
         dones = data["done"][:-1]
         actions = data["actions_converted"][:-1]
         scores = data["scores"]
-        
+
         # Compute the reward using the scores
         rewards = torch.zeros(scores.shape).to(FLAGS.device)
-        for i in range(scores.shape[0] - 1):            
+        for i in range(scores.shape[0] - 1):
             rewards[i] = scores[i + 1] - scores[i]
         rewards = torch.clamp(rewards, min=0)
-        rewards = rewards[:-1]  
+        rewards = rewards[:-1]
 
         # Compute the running ttyrec reward
-        TTYREC_RUNNING_REWARD *= FLAGS.discounting 
-        TTYREC_RUNNING_REWARD += rewards 
+        TTYREC_RUNNING_REWARD *= FLAGS.discounting
+        TTYREC_RUNNING_REWARD += rewards
         stats["ttyrec_mean_square_discounted_running_reward"] += (
             TTYREC_RUNNING_REWARD**2
         )
@@ -752,7 +751,9 @@ def compute_gradients_dqn(data, learner_state, stats):
         # Normalize the ttyrec rewards
         rewards = rewards * FLAGS.reward_scale
         if FLAGS.rms_reward_norm:
-            reward_std = stats["ttyrec_mean_square_discounted_running_reward"].mean() ** 0.5
+            reward_std = (
+                stats["ttyrec_mean_square_discounted_running_reward"].mean() ** 0.5
+            )
             rewards /= max(0.01, reward_std)
             stats["ttyrec_reward_normalised"] += rewards.mean().item()
         if FLAGS.reward_clip:
@@ -779,11 +780,11 @@ def compute_gradients_dqn(data, learner_state, stats):
         # Compute Expected Q-values
         next_state_values = target_qvalues.max(1)[0].detach()
         next_state_values *= (~dones).float()
-        expected_state_action_values = (next_state_values * FLAGS.discounting) \
-            + rewards
+        expected_state_action_values = (next_state_values * FLAGS.discounting) + rewards
 
-        ttyrec_dqn_loss = FLAGS.ttyrec_loss_coef * criterion(state_action_values, \
-            expected_state_action_values.unsqueeze(1))
+        ttyrec_dqn_loss = FLAGS.ttyrec_loss_coef * criterion(
+            state_action_values, expected_state_action_values.unsqueeze(1)
+        )
         total_loss += ttyrec_dqn_loss
         stats["ttyrec_dqn_loss"] += ttyrec_dqn_loss.item()
 
@@ -799,7 +800,7 @@ def compute_gradients_cql(data, learner_state, stats):
 
     model = learner_state.model
     model.train()
-    total_loss = 0 
+    total_loss = 0
 
     if FLAGS.use_online_data:
         env_outputs = data["env_outputs"]
@@ -839,8 +840,9 @@ def compute_gradients_cql(data, learner_state, stats):
         next_state_values *= (~dones).float()
         expected_state_action_values = (next_state_values * FLAGS.discounting) + rewards
 
-        dqn_loss = ((state_action_values - \
-            expected_state_action_values.unsqueeze(1))**2).mean()
+        dqn_loss = (
+            (state_action_values - expected_state_action_values.unsqueeze(1)) ** 2
+        ).mean()
         total_loss += dqn_loss
         stats["dqn_loss"] += dqn_loss.item()
 
@@ -862,17 +864,17 @@ def compute_gradients_cql(data, learner_state, stats):
         dones = data["done"][:-1]
         actions = data["actions_converted"][:-1]
         scores = data["scores"]
-        
+
         # Compute the reward using the scores
         rewards = torch.zeros(scores.shape).to(FLAGS.device)
-        for i in range(scores.shape[0] - 1):            
+        for i in range(scores.shape[0] - 1):
             rewards[i] = scores[i + 1] - scores[i]
         rewards = torch.clamp(rewards, min=0)
-        rewards = rewards[:-1]  
+        rewards = rewards[:-1]
 
         # Compute the running ttyrec reward
-        TTYREC_RUNNING_REWARD *= FLAGS.discounting 
-        TTYREC_RUNNING_REWARD += rewards 
+        TTYREC_RUNNING_REWARD *= FLAGS.discounting
+        TTYREC_RUNNING_REWARD += rewards
         stats["ttyrec_mean_square_discounted_running_reward"] += (
             TTYREC_RUNNING_REWARD**2
         )
@@ -881,7 +883,9 @@ def compute_gradients_cql(data, learner_state, stats):
         # Normalize the ttyrec rewards
         rewards = rewards * FLAGS.reward_scale
         if FLAGS.rms_reward_norm:
-            reward_std = stats["ttyrec_mean_square_discounted_running_reward"].mean() ** 0.5
+            reward_std = (
+                stats["ttyrec_mean_square_discounted_running_reward"].mean() ** 0.5
+            )
             rewards /= max(0.01, reward_std)
             stats["ttyrec_reward_normalised"] += rewards.mean().item()
         if FLAGS.reward_clip:
@@ -906,17 +910,17 @@ def compute_gradients_cql(data, learner_state, stats):
         # Compute Expected Q-values
         next_state_values = target_qvalues.max(1)[0].detach()
         next_state_values *= (~dones).float()
-        expected_state_action_values = (next_state_values * FLAGS.discounting) \
-            + rewards
+        expected_state_action_values = (next_state_values * FLAGS.discounting) + rewards
 
-        ttyrec_dqn_loss = ((state_action_values - \
-            expected_state_action_values.unsqueeze(1))**2).mean()
+        ttyrec_dqn_loss = (
+            (state_action_values - expected_state_action_values.unsqueeze(1)) ** 2
+        ).mean()
         total_loss += FLAGS.ttyrec_loss_coef * ttyrec_dqn_loss
         stats["ttyrec_dqn_loss"] += ttyrec_dqn_loss.item()
 
         # compute logsumexp
         logsumexp = torch.logsumexp(qvalues, dim=1, keepdim=True)
-        
+
         # estimate action-values under data distribution
         actions_onehot = F.one_hot(actions.view(-1), num_classes=A)
         data_values = (qvalues * actions_onehot).sum(dim=1, keepdim=True)
@@ -937,9 +941,9 @@ def compute_gradients_iql(data, learner_state, stats):
 
     model = learner_state.model
     model.train()
-    total_loss = 0 
+    total_loss = 0
 
-    if FLAGS.use_online_data:        
+    if FLAGS.use_online_data:
         env_outputs = data["env_outputs"]
         actor_outputs = data["actor_outputs"]
         initial_core_state = data["initial_core_state"]
@@ -959,12 +963,12 @@ def compute_gradients_iql(data, learner_state, stats):
         # NOTE: may need actions in here??
         learner_outputs, _ = model(env_outputs, initial_core_state)
 
-        v = learner_outputs['value'][:-1]
-        next_v = learner_outputs['value'][1:]
+        v = learner_outputs["value"][:-1]
+        next_v = learner_outputs["value"][1:]
 
-        q1 = learner_outputs['target_q1'][:-1]
-        q2 = learner_outputs['target_q2'][:-1]
-        policy_logits = learner_outputs['policy_logits'][:-1]
+        q1 = learner_outputs["target_q1"][:-1]
+        q2 = learner_outputs["target_q2"][:-1]
+        policy_logits = learner_outputs["policy_logits"][:-1]
 
         # TODO: double check the shapes
         T, B, A = policy_logits.shape
@@ -973,33 +977,35 @@ def compute_gradients_iql(data, learner_state, stats):
         actions = actions.reshape(T * B, 1)
         q1 = q1.reshape(T * B, 1)
         q2 = q2.reshape(T * B, 1)
-        v = v.reshape(T * B, 1) # TODO: do we need 1 here?
-        next_v = next_v.reshape(T * B, 1) # TODO: do we need 1 here?
+        v = v.reshape(T * B, 1)  # TODO: do we need 1 here?
+        next_v = next_v.reshape(T * B, 1)  # TODO: do we need 1 here?
         policy_logits = policy_logits.reshape(T * B, A)
 
-        q = torch.minimum(q1, q2) # TODO: double check this
+        q = torch.minimum(q1, q2)  # TODO: double check this
         target_q = rewards + FLAGS.discounting * (~dones).float() * next_v
-        
+
         exp_a = torch.exp((q - v) * FLAGS.temperature)
-        exp_a = torch.minimum(exp_a, torch.zeros(exp_a.shape).fill_(100.0).to(FLAGS.device))
+        exp_a = torch.minimum(
+            exp_a, torch.zeros(exp_a.shape).fill_(100.0).to(FLAGS.device)
+        )
 
         # Compute Actor Loss
         actions_onehot = torch.zeros(T * B, A).to(FLAGS.device)
         actions_onehot.scatter_(1, actions, 1)
         dist = Multinomial(logits=policy_logits)
-        log_probs = dist.log_prob(actions_onehot) 
+        log_probs = dist.log_prob(actions_onehot)
 
         actor_loss = -(exp_a * log_probs).mean()
         total_loss += FLAGS.actor_loss_coef * actor_loss
         stats["iql_actor_loss"] += actor_loss.item()
 
-        # Compute Value Loss 
+        # Compute Value Loss
         value_loss = compute_value_loss(q - v, FLAGS.expectile).mean()
         total_loss += FLAGS.value_loss_coef * value_loss
         stats["iql_value_loss"] += value_loss.item()
 
         # Compute Critic Loss
-        critic_loss = ((q1 - target_q)**2 + (q2 - target_q)**2).mean()
+        critic_loss = ((q1 - target_q) ** 2 + (q2 - target_q) ** 2).mean()
         total_loss += FLAGS.critic_loss_coef * critic_loss
         stats["iql_critic_loss"] += critic_loss.item()
 
@@ -1010,17 +1016,17 @@ def compute_gradients_iql(data, learner_state, stats):
         dones = data["done"][:-1]
         actions = data["actions_converted"][:-1]
         scores = data["scores"]
-        
+
         # Compute the reward using the scores
         rewards = torch.zeros(scores.shape).to(FLAGS.device)
-        for i in range(scores.shape[0] - 1):            
+        for i in range(scores.shape[0] - 1):
             rewards[i] = scores[i + 1] - scores[i]
         rewards = torch.clamp(rewards, min=0)
-        rewards = rewards[:-1]  
+        rewards = rewards[:-1]
 
         # Compute the running ttyrec reward
-        TTYREC_RUNNING_REWARD *= FLAGS.discounting 
-        TTYREC_RUNNING_REWARD += rewards 
+        TTYREC_RUNNING_REWARD *= FLAGS.discounting
+        TTYREC_RUNNING_REWARD += rewards
         stats["ttyrec_mean_square_discounted_running_reward"] += (
             TTYREC_RUNNING_REWARD**2
         )
@@ -1029,7 +1035,9 @@ def compute_gradients_iql(data, learner_state, stats):
         # Normalize the ttyrec rewards
         rewards = rewards * FLAGS.reward_scale
         if FLAGS.rms_reward_norm:
-            reward_std = stats["ttyrec_mean_square_discounted_running_reward"].mean() ** 0.5
+            reward_std = (
+                stats["ttyrec_mean_square_discounted_running_reward"].mean() ** 0.5
+            )
             rewards /= max(0.01, reward_std)
             stats["ttyrec_reward_normalised"] += rewards.mean().item()
         if FLAGS.reward_clip:
@@ -1037,12 +1045,12 @@ def compute_gradients_iql(data, learner_state, stats):
 
         learner_outputs, _ = model(data, tuple(TTYREC_HIDDEN_STATE[idx]))
 
-        v = learner_outputs['value'][:-1]
-        next_v = learner_outputs['value'][1:]
+        v = learner_outputs["value"][:-1]
+        next_v = learner_outputs["value"][1:]
 
-        q1 = learner_outputs['target_q1'][:-1]
-        q2 = learner_outputs['target_q2'][:-1]
-        policy_logits = learner_outputs['policy_logits'][:-1]
+        q1 = learner_outputs["target_q1"][:-1]
+        q2 = learner_outputs["target_q2"][:-1]
+        policy_logits = learner_outputs["policy_logits"][:-1]
 
         # TODO: double check the shapes
         T, B, A = policy_logits.shape
@@ -1051,34 +1059,38 @@ def compute_gradients_iql(data, learner_state, stats):
         actions = actions.reshape(T * B, 1)
         q1 = q1.reshape(T * B, 1)
         q2 = q2.reshape(T * B, 1)
-        v = v.reshape(T * B, 1) # TODO: do we need 1 here?
-        next_v = next_v.reshape(T * B, 1) # TODO: do we need 1 here?
+        v = v.reshape(T * B, 1)  # TODO: do we need 1 here?
+        next_v = next_v.reshape(T * B, 1)  # TODO: do we need 1 here?
         policy_logits = policy_logits.reshape(T * B, A)
 
-        q = torch.minimum(q1, q2) # TODO: double check this
+        q = torch.minimum(q1, q2)  # TODO: double check this
         target_q = rewards + FLAGS.discounting * (~dones).float() * next_v
-        
+
         exp_a = torch.exp((q - v) * FLAGS.temperature)
-        exp_a = torch.minimum(exp_a, torch.zeros(exp_a.shape).fill_(100.0).to(FLAGS.device))
+        exp_a = torch.minimum(
+            exp_a, torch.zeros(exp_a.shape).fill_(100.0).to(FLAGS.device)
+        )
 
         # Compute Actor Loss
         actions_onehot = torch.zeros(T * B, A).to(FLAGS.device)
         actions_onehot.scatter_(1, actions, 1)
         dist = Multinomial(logits=policy_logits)
-        log_probs = dist.log_prob(actions_onehot) 
+        log_probs = dist.log_prob(actions_onehot)
 
         ttyrec_actor_loss = -(exp_a * log_probs).mean()
         total_loss += FLAGS.ttyrec_loss_coef * FLAGS.actor_loss_coef * ttyrec_actor_loss
         stats["ttyrec_iql_actor_loss"] += ttyrec_actor_loss.item()
 
-        # Compute Value Loss 
+        # Compute Value Loss
         ttyrec_value_loss = compute_value_loss(q - v, FLAGS.expectile).mean()
         total_loss += FLAGS.ttyrec_loss_coef * FLAGS.value_loss_coef * ttyrec_value_loss
         stats["ttyrec_iql_value_loss"] += ttyrec_value_loss.item()
 
         # Compute Critic Loss
-        ttyrec_critic_loss = ((q1 - target_q)**2 + (q2 - target_q)**2).mean()
-        total_loss += FLAGS.ttyrec_loss_coef * FLAGS.critic_loss_coef * ttyrec_critic_loss
+        ttyrec_critic_loss = ((q1 - target_q) ** 2 + (q2 - target_q) ** 2).mean()
+        total_loss += (
+            FLAGS.ttyrec_loss_coef * FLAGS.critic_loss_coef * ttyrec_critic_loss
+        )
         stats["ttyrec_iql_critic_loss"] += ttyrec_critic_loss.item()
 
         # Only call step when you are done with ttyrec_data - it may get overwritten
@@ -1097,7 +1109,7 @@ def step_optimizer(learner_state, stats):
     )
     optimizer.step()
 
-    if FLAGS.algo == 'iql':
+    if FLAGS.algo == "iql":
         model.update_target_critic()
 
     learner_state.model_version += 1
@@ -1156,19 +1168,21 @@ def uid():
 
 omegaconf.OmegaConf.register_new_resolver("uid", uid, use_cache=True)
 
+
 # Override config_path via --config_path.
 @hydra.main(config_path=".", config_name="dqn_ttyrec_config")
 def main(cfg):
     global FLAGS, TTYREC_RUNNING_REWARD
     FLAGS = cfg
 
-    if FLAGS.algo == 'iql':
-        FLAGS.model = 'IQLChaoticDwarvenGPT5'
-    elif FLAGS.algo in ['dqn', 'cql']:
-        FLAGS.model = 'DQNChaoticDwarvenGPT5'
+    if FLAGS.algo == "iql":
+        FLAGS.model = "IQLChaoticDwarvenGPT5"
+    elif FLAGS.algo in ["dqn", "cql"]:
+        FLAGS.model = "DQNChaoticDwarvenGPT5"
 
-    TTYREC_RUNNING_REWARD = torch.zeros(FLAGS.unroll_length - 1, \
-        FLAGS.batch_size).to(FLAGS.device)
+    TTYREC_RUNNING_REWARD = torch.zeros(FLAGS.unroll_length - 1, FLAGS.batch_size).to(
+        FLAGS.device
+    )
 
     if not os.path.isabs(FLAGS.savedir):
         FLAGS.savedir = os.path.join(hydra.utils.get_original_cwd(), FLAGS.savedir)
@@ -1204,12 +1218,12 @@ def main(cfg):
         teacher = hackrl.models.create_model(t_flags, FLAGS.device)
         teacher.load_state_dict(load_data["learner_state"]["model"])
         model = hackrl.models.KickStarter(student, teacher)
-    elif FLAGS.algo in ['dqn', 'cql']:
+    elif FLAGS.algo in ["dqn", "cql"]:
         qnet = hackrl.models.create_model(FLAGS, FLAGS.device)
         target_qnet = hackrl.models.create_model(FLAGS, FLAGS.device)
         model = hackrl.models.DQN(qnet, target_qnet)
         model.to(FLAGS.device)
-    elif FLAGS.algo == 'iql':
+    elif FLAGS.algo == "iql":
         qnet = hackrl.models.create_model(FLAGS, FLAGS.device)
         target_qnet = hackrl.models.create_model(FLAGS, FLAGS.device)
         model = hackrl.models.IQL(qnet, target_qnet)
@@ -1347,9 +1361,9 @@ def main(cfg):
     tp = concurrent.futures.ThreadPoolExecutor(max_workers=10)
     TTYREC_HIDDEN_STATE = []
     for _ in range(FLAGS.ttyrec_envpool_size):
-        if FLAGS.algo in ['dqn', 'cql', 'iql']:
+        if FLAGS.algo in ["dqn", "cql", "iql"]:
             hs = [
-                (x[0].to(FLAGS.device), x[1].to(FLAGS.device)) 
+                (x[0].to(FLAGS.device), x[1].to(FLAGS.device))
                 for x in model.initial_state(batch_size=FLAGS.ttyrec_batch_size)
             ]
         else:
@@ -1471,11 +1485,11 @@ def main(cfg):
             step_optimizer(learner_state, stats)
             accumulator.zero_gradients()
         elif not learn_batcher.empty() and accumulator.wants_gradients():
-            if FLAGS.algo == 'dqn':
+            if FLAGS.algo == "dqn":
                 compute_gradients_dqn(learn_batcher.get(), learner_state, stats)
-            elif FLAGS.algo == 'cql':
+            elif FLAGS.algo == "cql":
                 compute_gradients_cql(learn_batcher.get(), learner_state, stats)
-            elif FLAGS.algo == 'iql':
+            elif FLAGS.algo == "iql":
                 compute_gradients_iql(learn_batcher.get(), learner_state, stats)
             else:
                 compute_gradients(learn_batcher.get(), learner_state, stats)
