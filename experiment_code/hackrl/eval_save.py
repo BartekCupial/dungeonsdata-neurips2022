@@ -7,7 +7,7 @@ import timeit
 import time
 import multiprocessing
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from multiprocessing import Process, Queue
 from multiprocessing.pool import ThreadPool
 
@@ -33,6 +33,11 @@ from hackrl.core import nest
 import matplotlib.pyplot as plt
 
 from hackrl.eval import load_model_flags_and_step
+from hackrl.utils.tasks_rewards import GoldScore, StaircasePetScore, ScoutScore, StaircaseScore, EatingScore
+
+
+BLStats = namedtuple('BLStats',
+                     'x y strength_percentage strength dexterity constitution intelligence wisdom charisma score hitpoints max_hitpoints depth gold energy max_energy armor_class monster_level experience_level experience_points time hunger_state carrying_capacity dungeon_number level_number prop_mask align_bits')
 
 
 def go_back(num_lines):
@@ -40,25 +45,7 @@ def go_back(num_lines):
 
 
 def results_to_dict(results):
-    returns = results["return"]
-    steps = results["steps"]
-    blscore = results["blscore"]
-    bltime = results["bltime"]
-
-    return {
-        "eval/mean_episode_return": np.mean(returns),
-        "eval/std_episode_return": np.std(returns),
-        "eval/median_episode_return": np.median(returns),
-        "eval/mean_episode_steps": np.mean(steps),
-        "eval/std_episode_steps": np.std(steps),
-        "eval/median_episode_steps": np.median(steps),
-        "eval/mean_episode_blscore": np.mean(blscore),
-        "eval/std_episode_blscore": np.std(blscore),
-        "eval/median_episode_blscore": np.median(blscore),
-        "eval/mean_episode_bltime": np.mean(bltime),
-        "eval/std_episode_bltime": np.std(bltime),
-        "eval/median_episode_bltime": np.median(bltime),
-    }
+    return {f"eval/mean_episode_{k}": np.mean(v) for k, v in results.items()}
 
 
 def single_rollout(
@@ -84,7 +71,6 @@ def single_rollout(
         gameloaddir=gameloaddir,
     )
 
-
     action = torch.tensor(0)
     hs = model.initial_state(1)
     hs = nest.map(lambda x: x.to(device), hs)
@@ -94,12 +80,19 @@ def single_rollout(
     current_reward = torch.tensor(0.0)
     done = False
 
-    bl_score = 0
-    bl_time = 0
+    starting_blstats = BLStats(*obs["blstats"])
+
+    gold_score = GoldScore()
+    eating_score = EatingScore()
+    scout_score = ScoutScore()
+    staircase_score = StaircaseScore()
+    staircasepet_score = StaircasePetScore()
 
     start_time = timeit.default_timer()
     timesteps = 0
     while True:
+        blstats = BLStats(*obs["blstats"])
+
         if render:
             print("-" * 8 + " " * 71)
             print(f"Previous reward: {str(reward):64s}")
@@ -118,9 +111,6 @@ def single_rollout(
         
         current_reward += env_outputs["reward"]
 
-        bl_score = env_outputs["blstats"][:, nethack.NLE_BL_SCORE].item()
-        bl_time = env_outputs["blstats"][:, nethack.NLE_BL_TIME].item()
-
         env_outputs["timesteps"] = torch.tensor(timesteps)
         env_outputs["max_scores"] = torch.tensor(score_target)
         env_outputs["mask"] = torch.tensor(True)
@@ -134,7 +124,16 @@ def single_rollout(
             outputs, hs = model(env_outputs, hs)
         action = outputs["action"].reshape(-1)
 
+        last_observation = tuple(a.copy() for a in env.last_observation)
         obs, reward, done, info = env.step(action)
+        observation = tuple(a.copy() for a in env.last_observation)
+        end_status = info["end_status"]
+
+        gold_score.accumulate_reward(env.env, last_observation, observation, end_status)
+        eating_score.accumulate_reward(env.env, last_observation, observation, end_status)
+        scout_score.accumulate_reward(env.env, last_observation, observation, end_status)
+        staircase_score.accumulate_reward(env.env, last_observation, observation, end_status)
+        staircasepet_score.accumulate_reward(env.env, last_observation, observation, end_status)
 
         if done:
             break
@@ -143,16 +142,27 @@ def single_rollout(
 
     time_delta = timeit.default_timer() - start_time
     sps = timesteps / time_delta
-    print(f"Finished after: {timesteps} steps and {time_delta} seconds. SPS: {sps}")
 
     returns = {
-        "return": current_reward.item(),
+        "score": blstats.score,
+        "agent_score": blstats.score - starting_blstats.score,
+        "turns": blstats.time,
+        "agent_turns": blstats.time - starting_blstats.time,
         "steps": timesteps,
-        "blscore": bl_score,
-        "bltime": bl_time,
+        "dlvl": blstats.depth,
+        "max_hitpoints": blstats.max_hitpoints,
+        "max_energy": blstats.max_energy,
+        "armor_class": blstats.armor_class,
+        "experience_level": blstats.experience_level,
+        "experience_points": blstats.experience_points,
+        "time": time_delta,
+        "sps": sps,
+        "gold_score": gold_score.score,
+        "eating_score": eating_score.score,
+        "scout_score": scout_score.score,
+        "staircase_score": staircase_score.score,
+        "staircasepet_score": staircasepet_score.score,
     }
-    print(f"Agent got {returns['return']} additional reward in {returns['steps']} timesteps, blscore: {returns['blscore']}, bltime: {returns['bltime']}")
-
     return returns
 
 
