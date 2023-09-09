@@ -177,60 +177,17 @@ def single_rollout(
 def single_evaluation(path, device, **kwargs):
     model, flags, step = load_model_flags_and_step(path, device)
 
+    start_time = time.time()
     returns = single_rollout(model=model, flags=flags, **kwargs)
+    wall_time = time.time() - start_time
 
-    return returns, flags, step, 1
-
-
-# def multiple_evaluations(path, device, gameloaddir, **kwargs):
-#     import ray
-#     # ray.init(ignore_reinit_error=True, _temp_dir="/net/ascratch/people/plgbartekcupial/tmp")
-#     ray.init(ignore_reinit_error=True)
-
-#     refs = []
-
-#     @ray.remote(num_gpus=0, num_cpus=1, memory=4 * 1024 * 1024 * 1024)
-#     def remote_evaluation(gameloaddir=gameloaddir, **kwargs):
-#         q = Queue()
-
-#         def sim():
-#             q.put(single_evaluation(path, device, gameloaddir=gameloaddir, **kwargs))
-
-#         try:
-#             p = Process(target=sim, daemon=False)
-#             p.start()
-#             return q.get()
-#         finally:
-#             p.terminate()
-#             p.join()
-
-#     for gamepath in gameloaddir:
-#         refs.append(remote_evaluation.remote(gameloaddir=gamepath, **kwargs))
-
-#     all_res = defaultdict(list)
-#     count = 0
-#     for handle in refs:
-#         ref, refs = ray.wait(refs, num_returns=1, timeout=None)
-#         single_res = ray.get(ref[0])
-#         results, flags, step = single_res
-
-#         count += 1
-#         for k, v in results.items():
-#             all_res[k].append(v)
-
-#         text = []
-#         text.append(f'count                         : {count}')
-#         print('\n'.join(text) + '\n')
-
-#     print('DONE!')
-#     ray.shutdown()
-
-#     return all_res, flags, step, count
+    return returns, flags, step, 1, wall_time
 
 
 def multiple_evaluations(path, device, gameloaddir, **kwargs):
     model, flags, step = load_model_flags_and_step(path, device)
 
+    start_time = time.time()
     count = 0
     all_res = defaultdict(list)
     for gamepath in tqdm.tqdm(gameloaddir):
@@ -244,8 +201,8 @@ def multiple_evaluations(path, device, gameloaddir, **kwargs):
                 all_res[k].append(v)
         except Exception as e:
             print(e)
-
-    return all_res, flags, step, count
+    wall_time = time.time() - start_time
+    return all_res, flags, step, count, wall_time
 
 
 def parse_args(args=None):
@@ -290,27 +247,30 @@ def main(variant):
     name = variant["name"]
     checkpoint_dir = variant["checkpoint_dir"]
     log_to_wandb = variant["wandb"]
+    gameloaddir = variant["gameloaddir"]
 
     kwargs = dict(
         path=checkpoint_dir,
         device=variant["device"],
         score_target=variant["score_target"],
         env=variant["env"],
-        gameloaddir=variant["gameloaddir"],
+        gameloaddir=gameloaddir,
         render=variant["render"],
         render_mode=variant["render_mode"],
         print_frames_separately=variant["print_frames_separately"],
     )
 
+    print(f"Gameloaddir :{gameloaddir}")
     print(f"Evaluating checkpoint {checkpoint_dir}")
 
-    if isinstance(variant["gameloaddir"], list):
-        results, flags, step, count = multiple_evaluations(**kwargs)
+    if isinstance(gameloaddir, list):
+        results, flags, step, count, wall_time = multiple_evaluations(**kwargs)
     else:
-        results, flags, step, count = single_evaluation(**kwargs)
+        results, flags, step, count, wall_time = single_evaluation(**kwargs)
 
     results = results_to_dict(results)
     results["eval/count"] = count
+    results["eval/wall_time"] = wall_time
     print(json.dumps(results, indent=4))
 
     config = omegaconf.OmegaConf.to_container(flags)
