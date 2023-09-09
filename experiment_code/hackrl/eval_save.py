@@ -174,39 +174,12 @@ def single_rollout(
     return returns
 
 
-# def evaluate_save(path, device, gameloaddir, **kwargs):
-#     model, flags, step = load_model_flags_and_step(path, device)
-
-#     if isinstance(gameloaddir, list) and len(gameloaddir) > 1:
-#         print(f"Evaluate {len(gameloaddir)} saves.")
-#         returns = []
-#         for gamedir in tqdm.tqdm(gameloaddir):
-#             single_returns = single_rollout(
-#                 model=model,
-#                 flags=flags,
-#                 gameloaddir=gamedir,
-#                 **kwargs
-#             )
-#             returns.append(single_returns)
-#     else:
-#         print("Evaluate one save.")
-#         returns = single_rollout(
-#             model=model,
-#             flags=flags,
-#             gameloaddir=gameloaddir,
-#             **kwargs
-#         )
-#         returns = [returns]
-
-#     return results_to_dict(returns), flags, step
-
-
 def single_evaluation(path, device, **kwargs):
     model, flags, step = load_model_flags_and_step(path, device)
 
     returns = single_rollout(model=model, flags=flags, **kwargs)
 
-    return returns, flags, step
+    return returns, flags, step, 1
 
 
 # def multiple_evaluations(path, device, gameloaddir, **kwargs):
@@ -252,22 +225,27 @@ def single_evaluation(path, device, **kwargs):
 #     print('DONE!')
 #     ray.shutdown()
 
-#     return all_res, flags, step
+#     return all_res, flags, step, count
 
 
 def multiple_evaluations(path, device, gameloaddir, **kwargs):
     model, flags, step = load_model_flags_and_step(path, device)
 
+    count = 0
     all_res = defaultdict(list)
     for gamepath in tqdm.tqdm(gameloaddir):
-        returns = single_rollout(
-            model=model, flags=flags, gameloaddir=gamepath, **kwargs
-        )
+        try: 
+            returns = single_rollout(
+                model=model, flags=flags, gameloaddir=gamepath, **kwargs
+            )
+            count += 1
 
-        for k, v in returns.items():
-            all_res[k].append(v)
+            for k, v in returns.items():
+                all_res[k].append(v)
+        except Exception as e:
+            print(e)
 
-    return all_res, flags, step
+    return all_res, flags, step, count
 
 
 def parse_args(args=None):
@@ -327,11 +305,12 @@ def main(variant):
     print(f"Evaluating checkpoint {checkpoint_dir}")
 
     if isinstance(variant["gameloaddir"], list):
-        results, flags, step = multiple_evaluations(**kwargs)
+        results, flags, step, count = multiple_evaluations(**kwargs)
     else:
-        results, flags, step = single_evaluation(**kwargs)
+        results, flags, step, count = single_evaluation(**kwargs)
 
     results = results_to_dict(results)
+    results["eval/count"] = count
     print(json.dumps(results, indent=4))
 
     config = omegaconf.OmegaConf.to_container(flags)
