@@ -39,9 +39,6 @@ config = {
 config = combine_config_with_defaults(config)
 
 
-aa_bc = Path(
-    "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-condescending_turing"
-)
 appo_t = Path(
     "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_02-priceless_meninsky"
 )
@@ -53,20 +50,19 @@ save_root_path = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/gamesavedir
 
 cpaths = []
 for ckpt_paths in [
-    get_checkpoint_paths(aa_bc),
     get_checkpoint_paths(appo_t),
     get_checkpoint_paths(appo_aa_kl_t),
 ]:
     paths = []
     for path in ckpt_paths:
-        for i in range(0, 2_000_000_000, 100_000_000):
+        for i in range(0, 100_000_000, 10_000_000):
             paths.append(Path(path) / f"checkpoint_v{i}")
         paths.append(Path(path) / "checkpoint.tar")
     cpaths.append(paths)
 
 
 save_paths = []
-for i in range(2, 10):  # todo 10, 11
+for i in range(2, 3):  # todo 10, 11
     folder = f"saves{i}"
     saves = get_save_paths(save_root_path / folder, host="ares.cyfronet.pl")
     # limit to 1000 saves
