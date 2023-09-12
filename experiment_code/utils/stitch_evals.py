@@ -62,6 +62,7 @@ def log_group(group, df, config):
     )
     df = df[df["group"] == group]
     df = df.sort_values(["_step"])
+    # df = df[df['_step'] < 110000000] # because of mistake was needed for stitch dense
 
     for index, row in df.iterrows():
         logs = row.to_dict()

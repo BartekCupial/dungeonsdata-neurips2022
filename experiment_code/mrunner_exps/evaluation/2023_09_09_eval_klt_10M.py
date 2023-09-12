@@ -55,14 +55,13 @@ for ckpt_paths in [
 ]:
     paths = []
     for path in ckpt_paths:
-        for i in range(0, 100_000_000, 10_000_000):
+        for i in range(0, 110_000_000, 10_000_000):
             paths.append(Path(path) / f"checkpoint_v{i}")
-        paths.append(Path(path) / "checkpoint.tar")
     cpaths.append(paths)
 
 
 save_paths = []
-for i in range(2, 3):  # todo 10, 11
+for i in range(2, 10):  # todo 10, 11
     folder = f"saves{i}"
     saves = get_save_paths(save_root_path / folder, host="ares.cyfronet.pl")
     # limit to 1000 saves
