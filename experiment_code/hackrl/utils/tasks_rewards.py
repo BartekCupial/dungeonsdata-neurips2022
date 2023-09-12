@@ -91,3 +91,48 @@ class StaircasePetScore:
             neighbors = glyphs[y - 1 : y + 2, x - 1 : x + 2]
             if np.any(nethack.glyph_is_pet(neighbors)):
                 self.score += 1
+
+
+class SokobanfillpitScore:
+    """
+    This task requires the agent to put the boulders inside wholes for sokoban.
+    We count each successful boulder moved into a whole as a total reward.
+    """
+    def __init__(self):
+        self.score = 0
+
+    def reward(self, env, last_observation, observation, end_status):
+        # the score counts how many pits we fill
+        char_array = [chr(i) for i in observation[env._message_index]]
+        message = "".join(char_array)
+
+        if message.startswith("The boulder fills a pit."):
+            reward = 1
+        else: 
+            reward = 0
+        self.score += reward
+
+
+class SokobansolvedlevelsScore:
+    def __init__(self):
+        self.score = 0
+        self.sokoban_levels = {}
+
+    def reward(self, env, last_observation, observation, end_status):   
+        glyphs = observation[env._glyph_index]
+        blstats = observation[env._blstats_index]
+
+        dungeon_num = blstats[nethack.NLE_BL_DNUM]
+        dungeon_level = blstats[nethack.NLE_BL_DLEVEL]
+
+        # when we know that this is sokoban
+        if dungeon_num == 4:
+            # count the number of pits, glyphs SS.S_pit
+            pits = np.isin(glyphs, [2411]).sum()
+            
+            key = (dungeon_num, dungeon_level)
+            self.sokoban_levels[key] = pits
+
+            # when all pits are filled we assume that sokoban level is solved
+            if pits == 0:
+                self.score += 1

@@ -39,6 +39,8 @@ from hackrl.utils.tasks_rewards import (
     ScoutScore,
     StaircaseScore,
     EatingScore,
+    SokobanfillpitScore,
+    SokobansolvedlevelsScore,
 )
 
 
@@ -95,6 +97,8 @@ def single_rollout(
     scout_score = ScoutScore()
     staircase_score = StaircaseScore()
     staircasepet_score = StaircasePetScore()
+    sokobanfillpit_score = SokobanfillpitScore()
+    sokobansolvedlevel_score = SokobansolvedlevelsScore()
 
     start_time = timeit.default_timer()
     timesteps = 0
@@ -142,6 +146,8 @@ def single_rollout(
         scout_score.reward(env.env, last_observation, observation, end_status)
         staircase_score.reward(env.env, last_observation, observation, end_status)
         staircasepet_score.reward(env.env, last_observation, observation, end_status)
+        sokobanfillpit_score.reward(env.env, last_observation, observation, end_status)
+        sokobansolvedlevel_score.reward(env.env, last_observation, observation, end_status)
 
         if done:
             break
@@ -170,6 +176,8 @@ def single_rollout(
         "scout_score": scout_score.score,
         "staircase_score": staircase_score.score,
         "staircasepet_score": staircasepet_score.score,
+        "sokobanfillpit_score": sokobanfillpit_score.score,
+        "sokobansolvedlevel_score": sokobansolvedlevel_score.score,
     }
     return returns
 
