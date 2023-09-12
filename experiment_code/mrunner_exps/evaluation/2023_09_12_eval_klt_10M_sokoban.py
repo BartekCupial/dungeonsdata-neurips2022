@@ -59,7 +59,7 @@ for ckpt_paths in [
             paths.append(Path(path) / f"checkpoint_v{i}")
     cpaths.append(paths)
 
-expected_saves = 1000
+expected_saves = 200
 folder = "sokoban"
 saves = get_save_paths(save_root_path / folder, host="ares.cyfronet.pl")
 if len(saves) < expected_saves:
@@ -70,7 +70,7 @@ saves = [save_root_path / folder / s for e, s in enumerate(saves) if e < expecte
 params_grid = [
     {
         "checkpoint_dir": paths,
-        "gameloaddir": saves,
+        "gameloaddir": [saves],
         "name": [f"{name}_{folder}"],
     }
     for paths in cpaths
