@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from mrunner.helpers.specification_helper import create_experiments_helper
 
 from hackrl.eval import parse_args as eval_parse_args
@@ -37,29 +39,34 @@ config = combine_config_with_defaults(config)
 params_grid = [
     {
         "checkpoint_dir": [
-            "/home/bartek/Workspace/data/nethack_checkpoints/monk-AA-KL-T/checkpoint.tar"
+            # "/home/bartek/Workspace/data/nethack_checkpoints/monk-AA-KL-T/checkpoint.tar"
+            "/home/bartek/Workspace/data/nethack_checkpoints/monk-AA-BC/checkpoint.tar"
         ],
         "env": ["challenge"],
         "wandb": [False],
         "gameloaddir": [
             [
-                "/home/bartek/Workspace/autoascend/saves2/ahudajsetduj",
-                "/home/bartek/Workspace/autoascend/saves2/gvmxflekyghg",
-                "/home/bartek/Workspace/autoascend/saves2/amfzqwtcuwct",
-                "/home/bartek/Workspace/autoascend/saves2/awoekdexqiid",
-                "/home/bartek/Workspace/autoascend/saves2/bckndsihafsr",
-                "/home/bartek/Workspace/autoascend/saves2/bgnsgmmpfiev",
+                # "/home/bartek/Workspace/autoascend/saves2/ahudajsetduj",
+                # "/home/bartek/Workspace/autoascend/saves/sokoban_hgebprhoavfy",
+                # "/home/bartek/Workspace/autoascend/saves2/gvmxflekyghg",
+                # "/home/bartek/Workspace/autoascend/saves2/amfzqwtcuwct",
+                # "/home/bartek/Workspace/autoascend/saves2/awoekdexqiid",
+                # "/home/bartek/Workspace/autoascend/saves2/bckndsihafsr",
+                # "/home/bartek/Workspace/autoascend/saves2/bgnsgmmpfiev",
                 # None,
                 # None,
                 # None,
                 # None,
                 # None,
                 # None,
+                *list(Path("/home/bartek/Workspace/data/sokoban").iterdir()),
             ]
         ],
         # "gameloaddir": ["/home/bartek/Workspace/autoascend/saves2/ahudajsetduj"],
         "render": [False],
         "device": ["cpu"],
+        "use_ray": [True],
+        "print_frames_separately": [False],
     },
 ]
 

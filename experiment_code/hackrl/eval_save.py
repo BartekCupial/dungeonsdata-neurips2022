@@ -213,6 +213,52 @@ def multiple_evaluations(path, device, gameloaddir, **kwargs):
     return all_res, flags, step, count, wall_time
 
 
+def ray_evaluations(path, device, gameloaddir, **kwargs):
+    import ray
+    ray.init(ignore_reinit_error=True)
+    # ray.init(ignore_reinit_error=True, _temp_dir="/net/ascratch/people/plgbartekcupial/tmp")
+
+    model, flags, step = load_model_flags_and_step(path, device)
+    model_object_id = ray.put(model)
+
+    refs = []
+
+    @ray.remote(num_gpus=0)
+    def remote_evaluation(gameloaddir=gameloaddir):
+        q = Queue()
+
+        def sim():
+            model = ray.get(model_object_id)
+            q.put(single_rollout(model=model, flags=flags, gameloaddir=gameloaddir, **kwargs))
+
+        try:
+            p = Process(target=sim, daemon=False)
+            p.start()
+            return q.get()
+        finally:
+            p.terminate()
+            p.join()
+
+    for gamepath in gameloaddir:
+        refs.append(remote_evaluation.remote(gameloaddir=gamepath))
+
+    start_time = time.time()
+    count = 0
+    all_res = defaultdict(list)
+
+    for handle in tqdm.tqdm(refs):
+        ref, refs = ray.wait(refs, num_returns=1, timeout=None)
+        returns = ray.get(ref[0])
+
+        for k, v in returns.items():
+            all_res[k].append(v)
+
+        count += 1
+
+    wall_time = time.time() - start_time
+    return all_res, flags, step, count, wall_time
+
+
 def parse_args(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", type=str, default="evaluation")
@@ -225,6 +271,7 @@ def parse_args(args=None):
     )
     parser.add_argument("--results_path", type=Path, default="data.json")
     parser.add_argument("--device", type=str, default="cuda:0")
+    parser.add_argument("--use_ray", type=bool, default=False)
     parser.add_argument("--score_target", type=float, default=5000)
     parser.add_argument("--env", type=str, default="challenge")
     # render
@@ -272,7 +319,10 @@ def main(variant):
     print(f"Evaluating checkpoint {checkpoint_dir}")
 
     if isinstance(gameloaddir, list):
-        results, flags, step, count, wall_time = multiple_evaluations(**kwargs)
+        if variant["use_ray"]:
+            results, flags, step, count, wall_time = ray_evaluations(**kwargs)
+        else:
+            results, flags, step, count, wall_time = multiple_evaluations(**kwargs)
     else:
         results, flags, step, count, wall_time = single_evaluation(**kwargs)
 

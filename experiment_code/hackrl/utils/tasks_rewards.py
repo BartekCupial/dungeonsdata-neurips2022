@@ -106,7 +106,7 @@ class SokobanfillpitScore:
         char_array = [chr(i) for i in observation[env._message_index]]
         message = "".join(char_array)
 
-        if message.startswith("The boulder fills a pit."):
+        if message.startswith("The boulder fills a pit.") or message.startswith("The boulder falls into and plugs a whole in the floor!"):
             reward = 1
         else: 
             reward = 0
@@ -115,7 +115,6 @@ class SokobanfillpitScore:
 
 class SokobansolvedlevelsScore:
     def __init__(self):
-        self.score = 0
         self.sokoban_levels = {}
 
     def reward(self, env, last_observation, observation, end_status):   
@@ -133,6 +132,11 @@ class SokobansolvedlevelsScore:
             key = (dungeon_num, dungeon_level)
             self.sokoban_levels[key] = pits
 
+    @property
+    def score(self):
+        score = 0
+        for pits in self.sokoban_levels.values():
             # when all pits are filled we assume that sokoban level is solved
             if pits == 0:
-                self.score += 1
+                score += 1
+        return score
