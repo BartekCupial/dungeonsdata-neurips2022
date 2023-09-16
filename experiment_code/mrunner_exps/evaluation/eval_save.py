@@ -40,7 +40,7 @@ params_grid = [
     {
         "checkpoint_dir": [
             # "/home/bartek/Workspace/data/nethack_checkpoints/monk-AA-KL-T/checkpoint.tar"
-            "/home/bartek/Workspace/data/nethack_checkpoints/monk-AA-BC/checkpoint.tar"
+            "/home/bartek/12_05-09_03-nervous_wiles/2023-11-05-monk-appo-aa-bc-t_jisi_2/checkpoint/hackrl/nle/2023_11_05_monk-APPO-AA-BC-T_2_ostentate/checkpoint_v10000000"
         ],
         "env": ["challenge"],
         "wandb": [False],
@@ -65,7 +65,7 @@ params_grid = [
         # "gameloaddir": ["/home/bartek/Workspace/autoascend/saves2/ahudajsetduj"],
         "render": [False],
         "device": ["cpu"],
-        "use_ray": [True],
+        "use_ray": [False],
         "print_frames_separately": [False],
     },
 ]
