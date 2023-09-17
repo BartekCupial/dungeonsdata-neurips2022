@@ -4,7 +4,7 @@
         "$or": [
             {
                 "config.exp_kind": "eval",
-                "config.name": "2023_09_12_eval_klt_10M_sokoban_sokoban",
+                "config.name": "2023_09_16_eval_10M_sokoban_sokoban",
                 "config.exp_point": "monk-APPO"
             }
         ]
