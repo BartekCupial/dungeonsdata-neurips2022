@@ -198,7 +198,10 @@ def multiple_evaluations(path, device, gameloaddir, **kwargs):
     start_time = time.time()
     count = 0
     all_res = defaultdict(list)
-    for gamepath in tqdm.tqdm(gameloaddir):
+
+    progress_bar = tqdm.tqdm(total=len(gameloaddir), desc="Processing folders")
+    for gamepath in gameloaddir:
+        progress_bar.set_description(f"Current save: {gamepath.name}")
         try: 
             returns = single_rollout(
                 model=model, flags=flags, gameloaddir=gamepath, **kwargs
@@ -209,6 +212,7 @@ def multiple_evaluations(path, device, gameloaddir, **kwargs):
                 all_res[k].append(v)
         except Exception as e:
             print(e)
+        progress_bar.update(1)
     wall_time = time.time() - start_time
     return all_res, flags, step, count, wall_time
 
