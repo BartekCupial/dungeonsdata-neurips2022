@@ -23,6 +23,7 @@ from .baseline import BaselineNet
 from .chaotic_dwarf import ChaoticDwarvenGPT5
 from .decision_transformer import DecisionTransformer
 from .offline_chaotic_dwarf import DQNChaoticDwarvenGPT5, IQLChaoticDwarvenGPT5
+from .nethack_net import NetHackNetTtyrec
 from .inverse_model import BigInverseOnlyModel
 from .kickstarter import KickStarter
 from .dqn import DQN
@@ -40,6 +41,7 @@ MODELS = [
     CQL,
     IQL,
     DecisionTransformer,
+    NetHackNetTtyrec,
 ]
 MODELS_LOOKUP = {c.__name__: c for c in MODELS}
 
@@ -86,7 +88,10 @@ def create_model(flags, device):
             flags["model_checkpoint_path"],
             map_location=torch.device(device),
         )
-        model.load_state_dict(load_data["learner_state"]["model"], strict=False)
+        if "model_state_dict" in load_data:
+            model.load_state_dict(load_data["model_state_dict"])
+        else: 
+            model.load_state_dict(load_data["learner_state"]["model"], strict=False)
 
     return model
 

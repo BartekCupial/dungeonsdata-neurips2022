@@ -53,7 +53,7 @@ env:
 exp_point: point-A       # spare parameter, useful for wandb grouping
 exp_set: experiment-set  # spare parameter, useful for wandb grouping
 exp_tags: local          # spare parameter, useful for wandb grouping
-fixup_init: true
+fixup_init: True
 fn_penalty_step: constant
 grad_norm_clipping: 4
 group: group2 
@@ -73,6 +73,32 @@ n_layer: 3
 n_head: 1
 hidden_dim: 512
 
+# scaled
+h_dim: 1738
+msg_hdim: 64
+sampling_type: argmax
+color_edim: 16
+char_edim: 16
+use_crop: True
+use_charcnn_topline: False
+use_parsed_blstats: False
+use_condition_bits: True
+use_bl_role: False
+use_encumbrance: False
+temperature: 1.0
+normalize_blstats: False
+use_crop_norm: True
+blstats_version: v2
+use_inventory: False
+lagged_actions: 0
+top_k: 1
+top_p: 0.9
+screen_kernel_size: 3
+no_max_pool: False
+screen_conv_blocks: 2
+blstats_hdim: 512
+fc_after_cnn_hdim: 512
+
 normalize_advantages: True
 normalize_reward: False
 num_actor_batches: 2
@@ -91,14 +117,14 @@ dbfilename: "/ttyrecs/ttyrecs.db"
 state_counter: none
 total_steps: 10_000_000_000
 unroll_length: 32
-use_bn: false
-use_lstm: true
+use_bn: False
+use_lstm: True
 virtual_batch_size: 128
-wandb: true
+wandb: True
 
-rms_reward_norm: true
+rms_reward_norm: True
 initialisation: 'orthogonal'
-use_global_advantage_norm: false
+use_global_advantage_norm: False
 
 baseline:
   # Parameters for models/baseline.py
@@ -129,17 +155,17 @@ ppg_sleep_sample_reuse: 6
 ppg_sleep_cycles: 2
 ppg_baseline_cost: 1.0 # normally 0.5 for value_fn and 0.5 for aux_value_fn but we keep only one
 
-use_tty_only: true  # Use only tty observations. 'False' ~ 10% faster & higher score
-use_prev_action: true
-use_inverse_model: false
-use_inverse_model_only: false
-use_actions: false
-use_returns: true
+use_tty_only: True  # Use only tty observations. 'False' ~ 10% faster & higher score
+use_prev_action: True
+use_inverse_model: False
+use_inverse_model_only: False
+use_actions: False
+use_returns: True
 action_hidden_dim: 128
 return_hidden_dim: 128
-use_timesteps: true
-return_to_go: true
-linear_time_embeddings: true
+use_timesteps: True
+return_to_go: True
+linear_time_embeddings: True
 score_scale: 40000
 score_target_strategy: value # 'max', 'mean', 'percentile', 'value'
 score_target_percentile: 95
