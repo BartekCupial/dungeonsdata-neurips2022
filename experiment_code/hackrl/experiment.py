@@ -632,8 +632,8 @@ def create_scheduler(optimizer):
     )
 
 
-def compute_gradients(data, sleep_data, learner_state, stats):
-    global TTYREC_ENVPOOL, TTYREC_HIDDEN_STATE, FORGETTING_ENVPOOL, FORGETTING_HIDDEN_STATE
+def compute_gradients(data, sleep_data, learner_state, stats, compute_backward):
+    global TTYREC_ENVPOOL, TTYREC_HIDDEN_STATE
     model = learner_state.model
 
     env_outputs = data["env_outputs"]
@@ -698,10 +698,11 @@ def compute_gradients(data, sleep_data, learner_state, stats):
         # Only call step when you are done with ttyrec_data - it may get overwritten
         TTYREC_ENVPOOL.step()
         if FLAGS.behavioural_clone or FLAGS.use_inverse_model_only:
-            stats["env_train_steps"] += (
-                FLAGS.ttyrec_unroll_length * FLAGS.ttyrec_batch_size
-            )
-            total_loss.backward()
+            if compute_backward:
+                stats["env_train_steps"] += (
+                    FLAGS.ttyrec_unroll_length * FLAGS.ttyrec_batch_size
+                )
+                total_loss.backward()
             return
 
     learner_outputs, _ = model(env_outputs, initial_core_state)
@@ -871,29 +872,10 @@ def compute_gradients(data, sleep_data, learner_state, stats):
         # Only call step when you are done with ttyrec_data - it may get overwritten
         TTYREC_ENVPOOL.step()
 
-    if FLAGS.log_forgetting:
-        with torch.no_grad():
-            kick_data = FORGETTING_ENVPOOL.result()
-            idx = FORGETTING_ENVPOOL.idx
-            kick_predictions, FORGETTING_HIDDEN_STATE[idx] = model(
-                kick_data, FORGETTING_HIDDEN_STATE[idx]
-            )
-            FORGETTING_HIDDEN_STATE[idx] = nest.map(
-                lambda t: t.detach(), FORGETTING_HIDDEN_STATE[idx]
-            )
+    if compute_backward:
+        stats["env_train_steps"] += FLAGS.unroll_length * FLAGS.batch_size
+        total_loss.backward()
 
-            forgetting_loss = compute_kickstarting_loss(
-                kick_predictions["policy_logits"],
-                kick_predictions["kick_policy_logits"],
-            )
-            stats["forgetting_loss"] += forgetting_loss.item()
-
-            # Only call step when you are done with ttyrec_data - it may get overwritten
-            FORGETTING_ENVPOOL.step()
-
-    total_loss.backward()
-
-    stats["env_train_steps"] += FLAGS.unroll_length * FLAGS.batch_size
     stats["policy_loss"] += pg_loss.item()
     stats["baseline_loss"] += baseline_loss.item()
     stats["entropy_loss"] += entropy_loss.item()
@@ -1013,7 +995,7 @@ def main(cfg):
     if os.path.exists(os.path.join(FLAGS.savedir, "checkpoint.tar")):
         FLAGS.use_checkpoint_actor = False
 
-    if FLAGS.use_kickstarting or FLAGS.use_kickstarting_bc or FLAGS.log_forgetting:
+    if FLAGS.use_kickstarting or FLAGS.use_kickstarting_bc:
         student = hackrl.models.create_model(FLAGS, FLAGS.device)
         load_data = torch.load(FLAGS.kickstarting_path)
         t_flags = omegaconf.OmegaConf.create(load_data["flags"])
@@ -1103,7 +1085,6 @@ def main(cfg):
         "kickstarting_coeff": StatMean(),
         "kickstarting_loss_bc": StatMean(),
         "kickstarting_coeff_bc": StatMean(),
-        "forgetting_loss": StatMean(),
         "ppg_kl_loss": StatMean(),
         "ppg_baseline_loss": StatMean(),
         "inverse_loss": StatMean(),
@@ -1191,20 +1172,6 @@ def main(cfg):
         score_target = 100000
         tp = None
 
-    if FLAGS.log_forgetting:
-        global FORGETTING_ENVPOOL, FORGETTING_HIDDEN_STATE
-        tp2 = concurrent.futures.ThreadPoolExecutor(max_workers=FLAGS.ttyrec_cpus)
-        FORGETTING_HIDDEN_STATE = []
-        for _ in range(FLAGS.ttyrec_envpool_size):
-            hs = nest.map(
-                lambda x: x.to(FLAGS.device),
-                model.initial_state(batch_size=FLAGS.ttyrec_batch_size),
-            )
-            FORGETTING_HIDDEN_STATE.append(hs)
-        FORGETTING_ENVPOOL = make_ttyrec_envpool(tp2, FLAGS.forgetting_dataset, FLAGS)
-    else:
-        tp2 = None
-
     # Run.
     now = time.time()
     prev_env_train_steps = 0
@@ -1214,23 +1181,13 @@ def main(cfg):
     last_reduce_stats = now
     is_leader = False
     is_connected = False
-    unfreezed = False
+    warmup_env_steps = 0
     checkpoint_steps = -1
     while not terminate:
         prev_now = now
         now = time.time()
 
         steps = learner_state.global_stats["env_train_steps"].result()
-        if not unfreezed and steps > FLAGS.unfreeze_actor_steps:
-            if (
-                FLAGS.use_kickstarting
-                or FLAGS.use_kickstarting_bc
-                or FLAGS.log_forgetting
-            ):
-                hackrl.models.unfreeze(model.student)
-            else:
-                hackrl.models.unfreeze(model)
-            unfreezed = True
 
         if steps >= FLAGS.total_steps:
             logging.info("Stopping training after %i steps", steps)
@@ -1332,8 +1289,16 @@ def main(cfg):
         elif not learn_batcher.empty() and accumulator.wants_gradients():
             learn_batch = learn_batcher.get()
             sleep_learn_batcher.append(learn_batch)
-            compute_gradients(learn_batch, sleep_learn_batcher, learner_state, stats)
-            accumulator.reduce_gradients(FLAGS.batch_size)
+
+            # warm up the environments, if we train BC or inverse model, always compute gradients since we don't mess with env data
+            if FLAGS.behavioural_clone or FLAGS.use_inverse_model_only:
+                warmup_env_steps += FLAGS.ttyrec_unroll_length * FLAGS.ttyrec_batch_size
+            else:
+                warmup_env_steps += FLAGS.unroll_length * FLAGS.batch_size
+            compute_backward = warmup_env_steps > FLAGS.unfreeze_actor_steps
+            compute_gradients(learn_batch, sleep_learn_batcher, learner_state, stats, compute_backward)
+            if compute_backward:
+                accumulator.reduce_gradients(FLAGS.batch_size)
         else:
             if accumulator.wants_gradients():
                 accumulator.skip_gradients()
@@ -1398,8 +1363,6 @@ def main(cfg):
         )
     if tp:
         tp.shutdown()
-    if tp2:
-        tp2.shutdown()
     logging.info("Graceful exit. Bye bye!")
 
 
