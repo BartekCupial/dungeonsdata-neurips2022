@@ -19,7 +19,7 @@ config = {
     "character": "mon-hum-neu-mal",
     "use_checkpoint_actor": True,
     "supervised_loss": 0.5,
-    "model_checkpoint_path": "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/model_115.tar",
+    "model_checkpoint_path": "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/AMZN/checkpoint_v0",
     "dataset": "autoascend",
     "use_resnet": True,
     "model": "NetHackNetTtyrec",

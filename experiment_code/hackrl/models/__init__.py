@@ -88,10 +88,7 @@ def create_model(flags, device):
             flags["model_checkpoint_path"],
             map_location=torch.device(device),
         )
-        if "model_state_dict" in load_data:
-            model.load_state_dict(load_data["model_state_dict"])
-        else: 
-            model.load_state_dict(load_data["learner_state"]["model"], strict=False)
+        model.load_state_dict(load_data["learner_state"]["model"], strict=False)
 
     return model
 

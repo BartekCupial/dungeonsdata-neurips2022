@@ -18,7 +18,7 @@ config = {
     "group": "monk-APPO-AMZN",
     "character": "mon-hum-neu-mal",
     "use_checkpoint_actor": True,
-    "model_checkpoint_path": "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/model_115.tar",
+    "model_checkpoint_path": "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/AMZN/checkpoint_v0",
     "use_resnet": True,
     "model": "NetHackNetTtyrec",
     "unfreeze_actor_steps": 50_000_000,

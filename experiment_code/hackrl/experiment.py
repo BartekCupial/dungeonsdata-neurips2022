@@ -998,17 +998,12 @@ def main(cfg):
     if FLAGS.use_kickstarting or FLAGS.use_kickstarting_bc:
         student = hackrl.models.create_model(FLAGS, FLAGS.device)
 
-        from pathlib import Path
-        from copy import deepcopy
-        if Path(FLAGS.model_checkpoint_path).stem == "model_115":
-            teacher = deepcopy(student) 
-        else:
-            load_data = torch.load(FLAGS.kickstarting_path)
-            t_flags = omegaconf.OmegaConf.create(load_data["flags"])
-            # don't use checkpoint actor if we will be loading model from kickstarting_path
-            t_flags.use_checkpoint_actor = False
-            teacher = hackrl.models.create_model(t_flags, FLAGS.device)
-            teacher.load_state_dict(load_data["learner_state"]["model"])
+        load_data = torch.load(FLAGS.kickstarting_path)
+        t_flags = omegaconf.OmegaConf.create(load_data["flags"])
+        # don't use checkpoint actor if we will be loading model from kickstarting_path
+        t_flags.use_checkpoint_actor = False
+        teacher = hackrl.models.create_model(t_flags, FLAGS.device)
+        teacher.load_state_dict(load_data["learner_state"]["model"])
         model = hackrl.models.KickStarter(
             student, teacher, run_teacher_hs=FLAGS.run_teacher_hs
         )
