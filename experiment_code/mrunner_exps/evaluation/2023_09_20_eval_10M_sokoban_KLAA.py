@@ -51,15 +51,12 @@ for path in ckpt_paths:
 
 folders = []
 folders.append(None)
+folders.append("sokoban")
 for i in range(2, 10):
     folder = f"saves{i}"
     folders.append(folder)
-folders.append("sokoban")
 
-folders = folders[:6]
-# folders = folders[6:]
-
-expected_saves = 100
+expected_saves = 200
 save_paths = []
 for folder in folders:
     if folder is None:
