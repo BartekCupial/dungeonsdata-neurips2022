@@ -70,6 +70,8 @@ def single_rollout(
     render_mode="human",
     print_frames_separately=True,
 ):
+    model.eval()
+
     flags.reward_win = 1000
     flags.reward_lose = 1
     device = flags.device
@@ -201,7 +203,8 @@ def multiple_evaluations(path, device, gameloaddir, **kwargs):
 
     progress_bar = tqdm.tqdm(total=len(gameloaddir), desc="Processing folders")
     for gamepath in gameloaddir:
-        progress_bar.set_description(f"Current save: {gamepath.name}")
+        if gamepath:
+            progress_bar.set_description(f"Current save: {gamepath.name}")
         try: 
             returns = single_rollout(
                 model=model, flags=flags, gameloaddir=gamepath, **kwargs

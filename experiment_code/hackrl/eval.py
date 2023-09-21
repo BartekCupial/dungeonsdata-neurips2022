@@ -35,7 +35,7 @@ def load_model_flags_and_step(path, device):
     flags.device = device
     flags.use_checkpoint_actor = False
     model = hackrl.models.create_model(flags, device)
-    step = load_data["learner_state"]["global_stats"]["steps_done"]["value"]
+    step = load_data["learner_state"]["global_stats"]["env_train_steps"]["value"]
 
     if (
         flags.use_kickstarting
@@ -76,6 +76,8 @@ def generate_envpool_rollouts(
     log_to_wandb=False,
     env="challenge",
 ):
+    model.eval()
+    
     global ENVS
     # NB: We do NOT want to generate the first N rollouts from B batch
     # of envs since this will bias short episodes.

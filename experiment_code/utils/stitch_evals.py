@@ -66,9 +66,14 @@ def log_group(group, df, config):
 
     for index, row in df.iterrows():
         logs = row.to_dict()
-        logs["global/env_train_steps"] = logs["_step"]
+        step = int(logs["_step"])
+
+        # if step != 0:
+        #     step -= 50_000_000
+
+        logs["global/env_train_steps"] = step
         del logs["group"]
-        wandb.log(logs, step=int(logs["_step"]))
+        wandb.log(logs, step=step)
 
     wandb.finish()
 

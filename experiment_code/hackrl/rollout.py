@@ -24,6 +24,7 @@ def parse_args(args=None):
     parser.add_argument("--num_actor_batches", type=int, default=2)
     parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--score_target", type=float, default=5000)
+    parser.add_argument("--env", type=str, default="challenge")
     parser.add_argument("--save_ttyrec_every", type=int, default=1)
     # wandb stuff
     parser.add_argument("--wandb", type=bool, default=False)
@@ -43,6 +44,7 @@ def main(variant):
         num_actor_cpus=variant["num_actor_cpus"],
         num_actor_batches=variant["num_actor_batches"],
         score_target=variant["score_target"],
+        env=variant["env"],
         log_to_wandb=log_to_wandb,
     )
 
@@ -67,10 +69,12 @@ def main(variant):
             entity="gmum",
             name=name,
         )
+
+        results["global/env_train_steps"] = step
         wandb.log(results, step=step)
 
     with open(variant["results_path"], "w") as file:
-        json.dump(results_to_dict(results), file)
+        json.dump(results, file)
 
 
 if __name__ == "__main__":
