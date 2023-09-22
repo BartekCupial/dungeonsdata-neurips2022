@@ -1,11 +1,15 @@
 from mrunner.helpers.specification_helper import create_experiments_helper
 
 from hackrl.eval import parse_args as eval_parse_args
+from hackrl.eval_array import parse_args as eval_array_parse_args
+from hackrl.eval_save import parse_args as eval_save_parse_args
 from hackrl.rollout import parse_args as rollout_parse_args
 
 
 PARSE_ARGS_DICT = {
     "eval": eval_parse_args,
+    "eval_array": eval_array_parse_args,
+    "eval_save": eval_save_parse_args,
     "rollout": rollout_parse_args,
 }
 
@@ -18,30 +22,31 @@ def combine_config_with_defaults(config):
 
 
 name = globals()["script"][:-3]
-
+# name = "local"
 
 # params for all exps
 config = {
     "exp_tags": [name],
-    "run_kind": "rollout",
-    "name": "rollout",
-    "num_actor_cpus": 1,
-    "num_actor_batches": 1,
-    "rollouts": 1000,
-    "batch_size": 1,
+    "run_kind": "eval_save",
+    "name": name,
     "wandb": True,
-    "checkpoint_dir": "/path/to/checkpoint/file",
+    "render": False,
+    "device": "cpu",
+    "checkpoint_dir": "/path/to/checkpoint/dir",
+    "save_ttyrec_every": 1,
 }
 config = combine_config_with_defaults(config)
 
 # params different between exps
 params_grid = [
     {
-        "seed": list(range(10)),
+        "seed": list(range(500)), # how many processes to spawn
         "checkpoint_dir": [
             "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/AMZN/checkpoint_v0"
         ],
-        "savedir": ["/nle/nld-amzn/nld_data"],
+        "savedir": ["/net/pr2/projects/plgrid/plgggmum_crl/bcupial/nle/nld-amzn/nld_data"],
+        "gameloaddir": [[None] * 20], # num_rollouts
+        "use_ray": [False],
         "device": ["cpu"],
     },
 ]
