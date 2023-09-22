@@ -25,10 +25,6 @@ config = {
     "use_resnet": True,
     "model": "NetHackNetTtyrec",
     "unfreeze_actor_steps": 50_000_000,
-    "actor_batch_size": 64,
-    "batch_size": 32,
-    "virtual_batch_size": 32,
-    "unroll_length": 80,
 }
 
 # params different between exps
@@ -39,10 +35,26 @@ params_grid = [
         "baseline_cost": [0.5],
         "reward_clip": [False],
         "adam_learning_rate": [0.0002],
+        "actor_batch_size": [64],
+        "batch_size": [32],
+        "virtual_batch_size": [32],
+        "unroll_length": [80],
     },
     {
         "seed": list(range(5)),
         "adam_learning_rate": [0.001],
+        "actor_batch_size": [64],
+        "batch_size": [32],
+        "virtual_batch_size": [32],
+        "unroll_length": [80],
+    },
+    {
+        "seed": list(range(5)),
+        "adam_learning_rate": [0.001],
+        "actor_batch_size": [128],
+        "batch_size": [64],
+        "virtual_batch_size": [64],
+        "unroll_length": [32],
     },
 ]
 
