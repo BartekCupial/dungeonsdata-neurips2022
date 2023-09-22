@@ -154,6 +154,8 @@ def single_rollout(
         if done:
             break
 
+        yield 1
+
     env.close()
 
     time_delta = timeit.default_timer() - start_time
@@ -181,14 +183,17 @@ def single_rollout(
         "sokobanfillpit_score": sokobanfillpit_score.score,
         "sokobansolvedlevel_score": sokobansolvedlevel_score.score,
     }
-    return returns
+
+    yield returns
 
 
 def single_evaluation(path, device, **kwargs):
     model, flags, step = load_model_flags_and_step(path, device)
 
     start_time = time.time()
-    returns = single_rollout(model=model, flags=flags, **kwargs)
+    pbar = tqdm.tqdm()
+    for returns in single_rollout(model=model, flags=flags, **kwargs):
+        pbar.update()
     wall_time = time.time() - start_time
 
     return returns, flags, step, 1, wall_time
@@ -201,22 +206,24 @@ def multiple_evaluations(path, device, gameloaddir, **kwargs):
     count = 0
     all_res = defaultdict(list)
 
-    progress_bar = tqdm.tqdm(total=len(gameloaddir), desc="Processing folders")
+    pbar = tqdm.tqdm()
+    master_pbar = tqdm.tqdm(total=len(gameloaddir))
+
     for gamepath in gameloaddir:
         if gamepath:
-            progress_bar.set_description(f"Current save: {gamepath.name}")
+            master_pbar.set_description(f"Current save: {gamepath.name}")
         try: 
-            returns = single_rollout(
-                model=model, flags=flags, gameloaddir=gamepath, **kwargs
-            )
+            for returns in single_rollout(model=model, flags=flags, gameloaddir=gamepath, **kwargs):
+                pbar.update()
             count += 1
 
             for k, v in returns.items():
                 all_res[k].append(v)
         except Exception as e:
             print(e)
-        progress_bar.update(1)
+        master_pbar.update(1)
     wall_time = time.time() - start_time
+
     return all_res, flags, step, count, wall_time
 
 
@@ -225,42 +232,60 @@ def ray_evaluations(path, device, gameloaddir, **kwargs):
     ray.init(ignore_reinit_error=True)
     # ray.init(ignore_reinit_error=True, _temp_dir="/net/ascratch/people/plgbartekcupial/tmp")
 
+    assert device == "cpu", "eay_evaluations with cuda is slower than multiple_evaluations"
+
     model, flags, step = load_model_flags_and_step(path, device)
     model_object_id = ray.put(model)
 
-    refs = []
+    @ray.remote
+    class SharedQueueActor:
+        def __init__(self):
+            self.queue = []
+
+        def put(self, item):
+            self.queue.append(item)
+
+        def get(self):
+            if self.queue:
+                return self.queue.pop(0)
+            return None
 
     @ray.remote(num_gpus=0)
-    def remote_evaluation(gameloaddir=gameloaddir):
-        q = Queue()
-
-        def sim():
-            model = ray.get(model_object_id)
-            q.put(single_rollout(model=model, flags=flags, gameloaddir=gameloaddir, **kwargs))
+    def remote_evaluation(queue_actor, gameloaddir=gameloaddir):
+        model = ray.get(model_object_id)
 
         try:
-            p = Process(target=sim, daemon=False)
-            p.start()
-            return q.get()
-        finally:
-            p.terminate()
-            p.join()
+            for i in single_rollout(model=model, flags=flags, gameloaddir=gameloaddir, **kwargs):
+                queue_actor.put.remote(i)
+        except Exception as e:
+            queue_actor.put.remote({})
 
-    for gamepath in gameloaddir:
-        refs.append(remote_evaluation.remote(gameloaddir=gamepath))
+    shared_queue = SharedQueueActor.remote()
+
+    futures = [remote_evaluation.remote(shared_queue, gameloaddir=gamepath) for gamepath in gameloaddir]
+
+    pbar = tqdm.tqdm()
+    master_pbar = tqdm.tqdm(total=len(gameloaddir))
 
     start_time = time.time()
     count = 0
     all_res = defaultdict(list)
 
-    for handle in tqdm.tqdm(refs):
-        ref, refs = ray.wait(refs, num_returns=1, timeout=None)
-        returns = ray.get(ref[0])
+    while True: 
+        result = ray.get(shared_queue.get.remote())
 
-        for k, v in returns.items():
-            all_res[k].append(v)
+        if result == 1:
+            pbar.update()
+        elif isinstance(result, dict):
+            count += 1
 
-        count += 1
+            for k, v in result.items():
+                all_res[k].append(v)
+
+            master_pbar.update()
+    
+        if count == len(gameloaddir):
+            break
 
     wall_time = time.time() - start_time
     return all_res, flags, step, count, wall_time
@@ -299,6 +324,8 @@ def parse_args(args=None):
         default=True,
         help="Don't overwrite frames, print them all.",
     )
+    parser.add_argument("--save_ttyrec_every", type=int, default=0)
+    parser.add_argument("--savedir", type=Path, default=None)
     # wandb stuff
     parser.add_argument("--wandb", type=bool, default=False)
     parser.add_argument("--exp_kind", type=str, default="eval")
@@ -320,6 +347,8 @@ def main(variant):
         render=variant["render"],
         render_mode=variant["render_mode"],
         print_frames_separately=variant["print_frames_separately"],
+        savedir=variant["savedir"],
+        save_ttyrec_every=variant["save_ttyrec_every"],
     )
 
     print(f"Gameloaddir :{gameloaddir}")
