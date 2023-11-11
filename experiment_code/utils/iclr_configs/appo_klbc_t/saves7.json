@@ -1,0 +1,15 @@
+{
+    "exp_kind": "eval_stitch",
+    "filters": {
+        "$or": [
+            {
+                "config.exp_kind": "eval",
+                "config.name": "2023_09_22_eval_full_saves7",
+                "config.exp_tags": [
+                    "2023_09_22_eval_full"
+                ],
+                "config.exp_point": "monk-APPO-AA-KL"
+            }
+        ]
+    }
+}
