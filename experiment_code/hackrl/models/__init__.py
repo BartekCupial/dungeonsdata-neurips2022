@@ -89,6 +89,10 @@ def create_model(flags, device):
             map_location=torch.device(device),
         )
         model.load_state_dict(load_data["learner_state"]["model"], strict=False)
+        
+    if flags.get("freeze_model_unfreeze_baseline", None):
+        freeze(model)
+        unfreeze_selected(model, ["baseline"])
 
     return model
 
