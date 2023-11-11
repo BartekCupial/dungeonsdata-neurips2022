@@ -49,7 +49,7 @@ class TtyrecEnvPool:
         self.idx = 0
         self.env_pool_size = flags.ttyrec_envpool_size
         self.dataset = dataset.TtyrecDataset(dataset_name, **dataset_kwargs)
-        self.dataset.shuffle = True
+        # self.dataset.shuffle = True
         self.threadpool = dataset_kwargs["threadpool"]
         self.dataset_scores = dataset_scores
 
@@ -242,7 +242,7 @@ def make_ttyrec_envpool(threadpool, dataset_name, flags):
         dbfilename=dbfilename,
         threadpool=threadpool,
         loop_forever=True,
-        shuffle=True,
+        shuffle=flags.dataset_shuffle,
         dataset_scores=dataset_scores,
     )
     subselect = []

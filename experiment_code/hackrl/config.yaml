@@ -185,6 +185,7 @@ dataset_midscore: False
 dataset_deep: False
 dataset_warmup: 0
 dataset_reset: 0
+dataset_shuffle: True
 dataset_bootstrap_actions: False
 dataset_bootstrap_path: /checkpoint/ehambro/saved_models/inverse-may30-dev/checkpoint.tar
 bootstrap_pred_max: False
