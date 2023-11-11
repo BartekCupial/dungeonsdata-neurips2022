@@ -76,7 +76,7 @@ hidden_dim: 512
 # scaled
 h_dim: 1738
 msg_hdim: 64
-sampling_type: argmax
+sampling_type: softmax
 color_edim: 16
 char_edim: 16
 use_crop: True
