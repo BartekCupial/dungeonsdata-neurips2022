@@ -15,7 +15,7 @@ config = {
     "exp_set": "2G",
     "exp_point": "monk-AA-LSTM",
     "num_actor_cpus": 20,
-    "total_steps": 2_000_000_000,
+    "total_steps": 100_000_000,
     "actor_batch_size": 64,
     "batch_size": 32,
     "virtual_batch_size": 32,
@@ -30,13 +30,15 @@ config = {
     "character": "mon-hum-neu-mal",
     "model": "NetHackNetTtyrec",
     "unfreeze_actor_steps": 50_000_000,
+    "sampling_type": "softmax",
+    "freeze_model_unfreeze_baseline": True,
 }
 
 
 # params different between exps
 params_grid = [
     {
-        "seed": [0, 1, 2],
+        "seed": [0],
     },
 ]
 

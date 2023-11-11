@@ -10,6 +10,7 @@ name = globals()["script"][:-3]
 
 # params for all exps
 config = {
+    "exp_tags": [name],
     "connect": "0.0.0.0:4431",
     "exp_set": "2G",
     "exp_point": "@-AA-BC",
@@ -22,6 +23,7 @@ config = {
     "adam_learning_rate": 0.001,
     "behavioural_clone": True,
     "group": "@-AA-BC",
+    "use_prev_action": False,
 }
 
 

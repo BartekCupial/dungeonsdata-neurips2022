@@ -1,10 +1,9 @@
-from pathlib import Path
+from random_word import RandomWords
 
 from mrunner.helpers.specification_helper import (
     create_experiments_helper,
     get_combinations,
 )
-
 
 name = globals()["script"][:-3]
 
@@ -13,25 +12,29 @@ config = {
     "exp_tags": [name],
     "connect": "0.0.0.0:4431",
     "exp_set": "2G",
-    "exp_point": "monk-AA-BC",
+    "exp_point": "monk-APPO-AMZN",
     "num_actor_cpus": 20,
-    "total_steps": 2_000_000_000,
-    "actor_batch_size": 256,
-    "batch_size": 128,
-    "ttyrec_batch_size": 512,
-    "supervised_loss": 1,
-    "adam_learning_rate": 0.001,
-    "behavioural_clone": True,
-    "group": "monk-AA-BC",
+    "total_steps": 100_000_000,
+    "group": "monk-APPO-AMZN",
     "character": "mon-hum-neu-mal",
-    "use_prev_action": False,
+    "use_checkpoint_actor": True,
+    "model_checkpoint_path": "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/AMZN/checkpoint_v0",
+    "use_resnet": True,
+    "model": "NetHackNetTtyrec",
+    "unfreeze_actor_steps": 50_000_000,
+    "sampling_type": "softmax",
+    "freeze_model_unfreeze_baseline": True,
 }
-
 
 # params different between exps
 params_grid = [
     {
-        "seed": [0, 1, 2],
+        "seed": list(range(1)),
+        "adam_learning_rate": [0.001],
+        "actor_batch_size": [128],
+        "batch_size": [64],
+        "virtual_batch_size": [64],
+        "unroll_length": [32],
     },
 ]
 
@@ -40,7 +43,8 @@ params_configurations = get_combinations(params_grid)
 final_grid = []
 for e, cfg in enumerate(params_configurations):
     cfg = {key: [value] for key, value in cfg.items()}
-    cfg["group"] = [f"{name}_{e}"]
+    r = RandomWords().get_random_word()
+    cfg["group"] = [f"{name}_{e}_{r}"]
     final_grid.append(dict(cfg))
 
 

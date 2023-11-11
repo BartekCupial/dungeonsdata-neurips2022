@@ -38,7 +38,7 @@ config = {
 }
 config = combine_config_with_defaults(config)
 
-appo = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_02-cranky_fermi")
+appo = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/03_05-13_31-relaxed_cori")
 appo_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_02-priceless_meninsky")
 appo_aa_ks_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-modest_goldstine")
 appo_aa_klbc_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-pedantic_hawking")
@@ -50,17 +50,17 @@ save_root_path = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/gamesavedir
 cpaths = []
 for ckpt_paths in [
     get_checkpoint_paths(appo),
-    get_checkpoint_paths(appo_t),
-    get_checkpoint_paths(appo_aa_ks_t),
-    get_checkpoint_paths(appo_aa_klbc_t),
+    # get_checkpoint_paths(appo_t),
+    # get_checkpoint_paths(appo_aa_ks_t),
+    # get_checkpoint_paths(appo_aa_klbc_t),
     # get_checkpoint_paths(appo_aa_ceaa_t), # uncomment if needed
-    [path for path in get_checkpoint_paths(appo_aa_klaa_t) if any(f'T_{i}' in path for i in range(3, 25, 5))], 
+    # [path for path in get_checkpoint_paths(appo_aa_klaa_t) if any(f'T_{i}' in path for i in range(3, 25, 5))], 
 ]:
     paths = []
     for path in ckpt_paths:
         for i in range(0, 100_000_000, 10_000_000):
             paths.append(Path(path) / f"checkpoint_v{i}")
-        for i in range(100_000_000, 2_000_000_000, 100_000_000):
+        for i in range(100_000_000, 1_000_000_000, 100_000_000):
             paths.append(Path(path) / f"checkpoint_v{i}")
     cpaths.append(paths)
 

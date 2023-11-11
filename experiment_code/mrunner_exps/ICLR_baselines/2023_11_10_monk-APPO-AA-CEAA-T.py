@@ -12,19 +12,19 @@ config = {
     "exp_tags": [name],
     "connect": "0.0.0.0:4431",
     "exp_set": "2G",
-    "exp_point": "monk-APPO-AMZN-KS",
+    "exp_point": "monk-APPO-AMZN-CEAA",
     "num_actor_cpus": 20,
     "total_steps": 2_000_000_000,
-    "group": "monk-APPO-AMZN-KS",
+    "group": "monk-APPO-AMZN-CEAA",
     "character": "mon-hum-neu-mal",
     "use_checkpoint_actor": True,
-    "kickstarting_loss": 0.01,
-    "use_kickstarting": True,
-    "kickstarting_path": "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/AMZN/checkpoint_v0",
-    "model_checkpoint_path": "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/AMZN/checkpoint_v0",
+    "supervised_loss": 0.5,
+    "model_checkpoint_path": "/net/pr2/projects/plgrid/plgggmum_crl/bcupial/mrunner_scratch/nle/16_10-15_35-peaceful_khorana/2023-16-10-monk-appo-t-baseline_3g50_0/checkpoint/hackrl/nle/2023_16_10_monk-APPO-T_baseline_0_cavitate/checkpoint_v100000000",
+    "dataset": "autoascend",
     "use_resnet": True,
     "model": "NetHackNetTtyrec",
     "unfreeze_actor_steps": 50_000_000,
+    "sampling_type": "softmax",
 }
 
 # params different between exps
@@ -38,7 +38,9 @@ params_grid = [
         "actor_batch_size": [64],
         "batch_size": [32],
         "virtual_batch_size": [32],
+        "ttyrec_batch_size": [128],
         "unroll_length": [80],
+        "ttyrec_unroll_length": [80],
     },
     {
         "seed": list(range(5)),
@@ -46,7 +48,9 @@ params_grid = [
         "actor_batch_size": [64],
         "batch_size": [32],
         "virtual_batch_size": [32],
+        "ttyrec_batch_size": [128],
         "unroll_length": [80],
+        "ttyrec_unroll_length": [80],
     },
     {
         "seed": list(range(5)),
@@ -54,7 +58,9 @@ params_grid = [
         "actor_batch_size": [128],
         "batch_size": [64],
         "virtual_batch_size": [64],
+        "ttyrec_batch_size": [256],
         "unroll_length": [32],
+        "ttyrec_unroll_length": [32],
     },
 ]
 

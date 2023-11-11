@@ -40,30 +40,31 @@ params_grid = [
     {
         "checkpoint_dir": [
             # "/home/bartek/Workspace/data/nethack_checkpoints/monk-AA-KL-T/checkpoint.tar"
-            "/home/bartek/12_05-09_03-nervous_wiles/2023-11-05-monk-appo-aa-bc-t_jisi_2/checkpoint/hackrl/nle/2023_11_05_monk-APPO-AA-BC-T_2_ostentate/checkpoint_v10000000"
+            # "/home/bartek/Workspace/data/nethack_checkpoints/AMZN/checkpoint_v0"
+            "/home/bartek/Workspace/data/sf_checkpoints/dungeons/amzn-AA-BC/checkpoint_v100000000",
         ],
         "env": ["challenge"],
         "wandb": [False],
         "gameloaddir": [
             [
-                # "/home/bartek/Workspace/autoascend/saves2/ahudajsetduj",
-                # "/home/bartek/Workspace/autoascend/saves/sokoban_hgebprhoavfy",
-                # "/home/bartek/Workspace/autoascend/saves2/gvmxflekyghg",
-                # "/home/bartek/Workspace/autoascend/saves2/amfzqwtcuwct",
-                # "/home/bartek/Workspace/autoascend/saves2/awoekdexqiid",
-                # "/home/bartek/Workspace/autoascend/saves2/bckndsihafsr",
-                # "/home/bartek/Workspace/autoascend/saves2/bgnsgmmpfiev",
+                # "/home/bartek/Workspace/CW/autoascend/saves2/ahudajsetduj",
+                # "/home/bartek/Workspace/CW/autoascend/saves/sokoban_cbcmyjnzxoho",
+                # "/home/bartek/Workspace/CW/autoascend/saves2/gvmxflekyghg",
+                # "/home/bartek/Workspace/CW/autoascend/saves2/amfzqwtcuwct",
+                # "/home/bartek/Workspace/CW/autoascend/saves2/awoekdexqiid",
+                # "/home/bartek/Workspace/CW/autoascend/saves2/bckndsihafsr",
+                # "/home/bartek/Workspace/CW/autoascend/saves2/bgnsgmmpfiev",
+                None,
                 # None,
                 # None,
                 # None,
                 # None,
                 # None,
-                # None,
-                *list(Path("/home/bartek/Workspace/data/sokoban").iterdir()),
+                # *list(Path("/home/bartek/Workspace/data/sokoban").iterdir()),
             ]
         ],
         # "gameloaddir": ["/home/bartek/Workspace/autoascend/saves2/ahudajsetduj"],
-        "render": [False],
+        "render": [True],
         "device": ["cpu"],
         "use_ray": [False],
         "print_frames_separately": [False],
