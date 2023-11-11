@@ -211,7 +211,7 @@ def multiple_evaluations(path, device, gameloaddir, **kwargs):
 
     for gamepath in gameloaddir:
         if gamepath:
-            master_pbar.set_description(f"Current save: {gamepath.name}")
+            master_pbar.set_description(f"Current save: {Path(gamepath).name}")
         try: 
             for returns in single_rollout(model=model, flags=flags, gameloaddir=gamepath, **kwargs):
                 pbar.update()
