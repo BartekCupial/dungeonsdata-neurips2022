@@ -356,13 +356,15 @@ def main(variant):
 
     if isinstance(gameloaddir, list):
         if variant["use_ray"]:
-            results, flags, step, count, wall_time = ray_evaluations(**kwargs)
+            data, flags, step, count, wall_time = ray_evaluations(**kwargs)
         else:
-            results, flags, step, count, wall_time = multiple_evaluations(**kwargs)
+            data, flags, step, count, wall_time = multiple_evaluations(**kwargs)
     else:
-        results, flags, step, count, wall_time = single_evaluation(**kwargs)
+        data, flags, step, count, wall_time = single_evaluation(**kwargs)
 
-    results = results_to_dict(results)
+    data = pd.DataFrame(data)
+    data.to_csv("eval.csv")
+    results = results_to_dict(data)
     results["eval/count"] = count
     results["eval/wall_time"] = wall_time
     print(json.dumps(results, indent=4))
