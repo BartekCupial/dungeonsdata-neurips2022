@@ -42,7 +42,7 @@ params_grid = [
         "actor_batch_size": [128],
         "batch_size": [64],
         "virtual_batch_size": [64],
-        "ttyrec_batch_size": [256],
+        "ttyrec_batch_size": [128],
         "unroll_length": [32],
         "ttyrec_unroll_length": [32],
     },
