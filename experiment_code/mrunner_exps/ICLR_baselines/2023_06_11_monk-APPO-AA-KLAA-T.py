@@ -34,7 +34,7 @@ params_grid = [
     {
         "seed": list(range(1)),
         "adam_learning_rate": [0.00006, 0.00002, 0.000006, 0.000002, 0.0000006, 0.0000002],
-        "kickstarting_loss_bc": [0.5, 0.2, 0.1, 0.05],
+        "kickstarting_loss_bc": [10.0, 5.0, 2.0, 1.0, 0.5, 0.2, 0.1, 0.05],
         "kickstarting_decay_bc": [1.0, 0.9999, 0.99996, 0.99998],
         "appo_clip_policy": [0.2],
         "baseline_cost": [1.0],
