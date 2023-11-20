@@ -44,14 +44,22 @@ appo_aa_ks_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/n
 appo_aa_klbc_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-pedantic_hawking")
 appo_aa_ceaa_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_05-09_03-nervous_wiles")
 appo_aa_klaa_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/16_09-08_00-hardcore_jackson")
-appo_aa_ewc_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/16_09-08_00-hardcore_jackson")
+# appo_aa_ewcold_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/16_09-08_00-hardcore_jackson")
+
+appo_aa_ewc1_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_11-19_20-nostalgic_goodall")
+appo_aa_ewc2_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/12_11-19_20-hungry_clarke")
+appo_aa_ewc3_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/15_11-19_16-vigorous_turing")
+appo_aa_ewc4_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/16_11-13_23-ecstatic_lewin")
 
 save_root_path = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/gamesavedir")
 
 cpaths = []
 for ckpt_paths in [
     # get_checkpoint_paths(appo),
-    get_checkpoint_paths(appo_aa_ewc_t),
+    get_checkpoint_paths(appo_aa_ewc1_t),
+    get_checkpoint_paths(appo_aa_ewc2_t),
+    get_checkpoint_paths(appo_aa_ewc3_t),
+    get_checkpoint_paths(appo_aa_ewc4_t),
     # get_checkpoint_paths(appo_t),
     # get_checkpoint_paths(appo_aa_ks_t),
     # get_checkpoint_paths(appo_aa_klbc_t),
@@ -62,7 +70,7 @@ for ckpt_paths in [
     for path in ckpt_paths:
         for i in range(0, 100_000_000, 10_000_000):
             paths.append(Path(path) / f"checkpoint_v{i}")
-        for i in range(1_000_000_000, 2_100_000_000, 100_000_000):
+        for i in range(1_000_000_000, 2_000_000_000, 100_000_000):
             paths.append(Path(path) / f"checkpoint_v{i}")
     cpaths.append(paths)
 
