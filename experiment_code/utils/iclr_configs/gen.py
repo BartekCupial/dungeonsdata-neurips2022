@@ -3,23 +3,25 @@ import json
 from pathlib import Path
 
 
-exp_tag = "2023_09_22_eval_full2"
+exp_tag = "2023_09_22_eval_full"
 methods = [
     "monk-APPO",
-    # "monk-APPO",
-    # "monk-APPO-AA-KLAA",
-    # "monk-APPO-AA-KL",
-    # "monk-APPO-AA-KS",
-    # "monk-APPO-AA-BC",
+    "monk-APPO",
+    "monk-APPO-AA-KLAA",
+    "monk-APPO-AA-KL",
+    "monk-APPO-AA-KS",
+    "monk-APPO-AA-BC",
+    "monk-T-EWC-final_new",
 ]
 
 folder_names = [
     "appo",
-    # "appo_t",
-    # "appo_klaa_t",
-    # "appo_klbc_t",
-    # "appo_ks_t",
-    # "appo_ceaa_t",
+    "appo_t",
+    "appo_klaa_t",
+    "appo_klbc_t",
+    "appo_ks_t",
+    "appo_ceaa_t",
+    "appo_ewc_t",
 ]
 
 folders = []

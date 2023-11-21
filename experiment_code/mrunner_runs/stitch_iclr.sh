@@ -1,16 +1,16 @@
 #!/bin/bash
 
 
-python -m utils.stitch_evals --json utils/iclr_configs/appo/saves1.json
-python -m utils.stitch_evals --json utils/iclr_configs/appo/saves2.json
-python -m utils.stitch_evals --json utils/iclr_configs/appo/saves3.json
-python -m utils.stitch_evals --json utils/iclr_configs/appo/saves4.json
-python -m utils.stitch_evals --json utils/iclr_configs/appo/saves5.json
-python -m utils.stitch_evals --json utils/iclr_configs/appo/saves6.json
-python -m utils.stitch_evals --json utils/iclr_configs/appo/saves7.json
-python -m utils.stitch_evals --json utils/iclr_configs/appo/saves8.json
-python -m utils.stitch_evals --json utils/iclr_configs/appo/saves9.json
-python -m utils.stitch_evals --json utils/iclr_configs/appo/sokoban.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo/saves1.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo/saves2.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo/saves3.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo/saves4.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo/saves5.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo/saves6.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo/saves7.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo/saves8.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo/saves9.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo/sokoban.json
 
 # python -m utils.stitch_evals --json utils/iclr_configs/appo_t/saves1.json
 # python -m utils.stitch_evals --json utils/iclr_configs/appo_t/saves2.json
@@ -66,3 +66,14 @@ python -m utils.stitch_evals --json utils/iclr_configs/appo/sokoban.json
 # python -m utils.stitch_evals --json utils/iclr_configs/appo_ks_t/saves8.json
 # python -m utils.stitch_evals --json utils/iclr_configs/appo_ks_t/saves9.json
 # python -m utils.stitch_evals --json utils/iclr_configs/appo_ks_t/sokoban.json
+
+# python -m utils.stitch_evals --json utils/iclr_configs/appo_ewc_t/saves1.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo_ewc_t/saves2.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo_ewc_t/saves3.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo_ewc_t/saves4.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo_ewc_t/saves5.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo_ewc_t/saves6.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo_ewc_t/saves7.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo_ewc_t/saves8.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo_ewc_t/saves9.json
+# python -m utils.stitch_evals --json utils/iclr_configs/appo_ewc_t/sokoban.json
