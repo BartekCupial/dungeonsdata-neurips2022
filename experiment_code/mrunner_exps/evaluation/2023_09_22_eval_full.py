@@ -51,15 +51,20 @@ appo_aa_ewc2_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch
 appo_aa_ewc3_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/15_11-19_16-vigorous_turing")
 appo_aa_ewc4_t = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/16_11-13_23-ecstatic_lewin")
 
+appo4b1 = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/15_11-07_45-confident_saha")
+appo4b2 = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/old_scratch/nle/15_11-07_45-hardcore_bhaskara")
+
 save_root_path = Path("/net/pr2/projects/plgrid/plgggmum_crl/bcupial/gamesavedir")
 
 cpaths = []
 for ckpt_paths in [
     # get_checkpoint_paths(appo),
-    get_checkpoint_paths(appo_aa_ewc1_t),
-    get_checkpoint_paths(appo_aa_ewc2_t),
-    get_checkpoint_paths(appo_aa_ewc3_t),
-    get_checkpoint_paths(appo_aa_ewc4_t),
+    # get_checkpoint_paths(appo4b1),
+    # get_checkpoint_paths(appo4b2),
+    # get_checkpoint_paths(appo_aa_ewc1_t),
+    # get_checkpoint_paths(appo_aa_ewc2_t),
+    # get_checkpoint_paths(appo_aa_ewc3_t),
+    # get_checkpoint_paths(appo_aa_ewc4_t),
     # get_checkpoint_paths(appo_t),
     # get_checkpoint_paths(appo_aa_ks_t),
     # get_checkpoint_paths(appo_aa_klbc_t),
@@ -70,7 +75,7 @@ for ckpt_paths in [
     for path in ckpt_paths:
         for i in range(0, 100_000_000, 10_000_000):
             paths.append(Path(path) / f"checkpoint_v{i}")
-        for i in range(1_000_000_000, 2_000_000_000, 100_000_000):
+        for i in range(100_000_000, 2_100_000_000, 100_000_000):
             paths.append(Path(path) / f"checkpoint_v{i}")
     cpaths.append(paths)
 

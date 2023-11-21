@@ -1,0 +1,17 @@
+{
+    "exp_kind": "eval_stitch",
+    "filters": {
+        "$or": [
+            {
+                "config.exp_kind": "eval",
+                "config.name": "2023_09_22_eval_full_None",
+                "config.exp_tags": [
+                    "2023_09_22_eval_full"
+                ],
+                "config.group": {
+                    "$in": ["2023_11_05_monk-APPO_0_souvlaki", "2023_11_05_monk-APPO_0_pansophic"]
+                }   
+            }
+        ]
+    }
+}
