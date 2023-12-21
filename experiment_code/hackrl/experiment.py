@@ -516,6 +516,21 @@ class EnvBatchState:
         self.timesteps *= not_done.to(self.device)
 
 
+class AdaptiveKLCoeff:
+  def __init__(self, init_coeff, d_targ):
+    self.beta = init_coeff
+    self.min_beta = 1e-6
+    self.max_beta = 1e6
+    self.d_targ = d_targ
+
+  def update(self, d):
+    if d < self.d_targ / 1.5:
+      self.beta = max(self.beta / 2, self.min_beta)
+
+    if d > self.d_targ * 1.5:
+      self.beta = min(self.beta * 2, self.max_beta)
+
+
 def compute_baseline_loss(
     actor_baseline, learner_baseline, target, clip_delta_value=None, stats=None
 ):
@@ -858,16 +873,26 @@ def compute_gradients(data, sleep_data, learner_state, stats, compute_backward):
         )
         TTYREC_HIDDEN_STATE[idx] = nest.map(
             lambda t: t.detach(), TTYREC_HIDDEN_STATE[idx]
-        )
-
-        kickstarting_loss_bc = FLAGS.kickstarting_loss_bc * compute_kickstarting_loss(
-            ttyrec_predictions["policy_logits"],
-            ttyrec_predictions["kick_policy_logits"],
-        )
-        FLAGS.kickstarting_loss_bc *= FLAGS.kickstarting_decay_bc
-        total_loss += kickstarting_loss_bc
-        stats["kickstarting_loss_bc"] += kickstarting_loss_bc.item()
-        stats["kickstarting_coeff_bc"] += FLAGS.kickstarting_loss_bc
+        )        
+        
+        if FLAGS.use_adaptive_kl:            
+            kickstarting_loss_bc = ADAPTIVE_KL_CONTROLLER.beta * compute_kickstarting_loss(
+                ttyrec_predictions["policy_logits"],
+                ttyrec_predictions["kick_policy_logits"],
+            )
+            total_loss += kickstarting_loss_bc
+            stats["kickstarting_loss_bc"] += kickstarting_loss_bc.item()
+            stats["kickstarting_coeff_bc"] += ADAPTIVE_KL_CONTROLLER.beta
+            ADAPTIVE_KL_CONTROLLER.update(kickstarting_loss_bc)
+        else:
+            kickstarting_loss_bc = FLAGS.kickstarting_loss_bc * compute_kickstarting_loss(
+                ttyrec_predictions["policy_logits"],
+                ttyrec_predictions["kick_policy_logits"],
+            )
+            FLAGS.kickstarting_loss_bc *= FLAGS.kickstarting_decay_bc
+            total_loss += kickstarting_loss_bc
+            stats["kickstarting_loss_bc"] += kickstarting_loss_bc.item()
+            stats["kickstarting_coeff_bc"] += FLAGS.kickstarting_loss_bc
 
         # Only call step when you are done with ttyrec_data - it may get overwritten
         TTYREC_ENVPOOL.step()
@@ -1154,6 +1179,10 @@ def main(cfg):
             )
             TTYREC_HIDDEN_STATE.append(hs)
         TTYREC_ENVPOOL = make_ttyrec_envpool(tp, FLAGS.dataset, FLAGS)
+
+        global ADAPTIVE_KL_CONTROLLER
+        if FLAGS.use_adaptive_kl:
+            ADAPTIVE_KL_CONTROLLER = AdaptiveKLCoeff(FLAGS.init_kl_coeff, FLAGS.target_kl_loss)
 
         # different strategies for score target
         if FLAGS.score_target_strategy == "max":

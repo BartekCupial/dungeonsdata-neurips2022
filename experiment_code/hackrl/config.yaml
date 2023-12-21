@@ -140,6 +140,9 @@ baseline:
 run_teacher_hs: False
 use_kickstarting: False
 use_kickstarting_bc: False
+use_adaptive_kl: False
+init_kl_coeff: 1.0
+target_kl_loss: 1.0 
 kickstarting_loss: 1.0
 kickstarting_decay: 1.0
 kickstarting_loss_bc: 1.0
