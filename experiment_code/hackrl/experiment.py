@@ -876,11 +876,11 @@ def compute_gradients(data, sleep_data, learner_state, stats, compute_backward):
         )        
         
         if FLAGS.use_adaptive_kl:            
-            kickstarting_loss_bc = ADAPTIVE_KL_CONTROLLER.beta * compute_kickstarting_loss(
+            kickstarting_loss_bc = compute_kickstarting_loss(
                 ttyrec_predictions["policy_logits"],
                 ttyrec_predictions["kick_policy_logits"],
             )
-            total_loss += kickstarting_loss_bc
+            total_loss += ADAPTIVE_KL_CONTROLLER.beta * kickstarting_loss_bc
             stats["kickstarting_loss_bc"] += kickstarting_loss_bc.item()
             stats["kickstarting_coeff_bc"] += ADAPTIVE_KL_CONTROLLER.beta
             ADAPTIVE_KL_CONTROLLER.update(kickstarting_loss_bc)
