@@ -56,9 +56,9 @@ def load_model_flags_and_step(path, device):
         )
         model.load_state_dict(student_params)
         return model, flags, step
-
-    model.load_state_dict(load_data["learner_state"]["model"])
-    return model, flags, step
+    else:
+        model.load_state_dict(load_data["learner_state"]["model"])
+        return model, flags, step
 
 
 @torch.no_grad()
