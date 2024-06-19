@@ -105,12 +105,12 @@ class TtyrecEnvPool:
                 "prev_action": torch.zeros(self.prev_action_shape, dtype=torch.uint8),
             }
 
-            # gameids = np.array(list(map(int, self.dataset_scores.keys()))).max()
-            # max_scores = np.zeros(gameids + 1)
+            gameids = np.array(list(map(int, self.dataset_scores.keys()))).max()
+            max_scores = np.zeros(gameids + 1)
 
-            # for key, value in self.dataset_scores.items():
-            #     max_scores[int(key)] = value
-            # max_scores = torch.from_numpy(max_scores).to(torch.float32)
+            for key, value in self.dataset_scores.items():
+                max_scores[int(key)] = value
+            max_scores = torch.from_numpy(max_scores).to(torch.float32)
 
             prev_action = torch.zeros(
                 (self.ttyrec_batch_size, 1), dtype=torch.uint8
@@ -145,7 +145,7 @@ class TtyrecEnvPool:
                         "screen_image": mb_tensors["screen_image"],
                         "done": mb_tensors["done"].bool(),
                         "timesteps": mb_tensors["timestamps"].float(),
-                        # "max_scores": max_scores[mb["gameids"].flatten()].reshape(mb["gameids"].shape).float(),
+                        "max_scores": max_scores[mb["gameids"].flatten()].reshape(mb["gameids"].shape).float(),
                         "mask": torch.ones_like(mb_tensors["timestamps"]).bool(),
                     }
 
@@ -1347,7 +1347,7 @@ def main(cfg):
 
             env_outputs["prev_action"] = env_state.prev_action
             env_outputs["timesteps"] = env_state.timesteps
-            # env_outputs["max_scores"] = (torch.ones_like(env_state.timesteps) * score_target).float()
+            env_outputs["max_scores"] = (torch.ones_like(env_state.timesteps) * score_target).float()
             env_outputs["mask"] = torch.ones_like(env_state.timesteps).to(torch.bool)
             env_outputs["scores"] = env_state.running_reward
             prev_core_state = env_state.core_state

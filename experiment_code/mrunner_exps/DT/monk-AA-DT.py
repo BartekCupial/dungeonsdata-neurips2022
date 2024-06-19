@@ -28,7 +28,6 @@ config = {
     "return_to_go": True,
     "use_timesteps": True,
     "use_returns": True,
-    "use_timesteps": True,
     "score_target_value": 10000,
     "score_scale": 10000,
     "n_layer": 6,
@@ -37,6 +36,7 @@ config = {
     "hidden_dim": 512,
     "warmup_steps": 10000,
     "weight_decay": 0.01,
+    # "dbfilename": "/home/bartek/Workspace/data/nethack/AA-taster/ttyrecs.db",
 }
 
 
@@ -44,6 +44,11 @@ config = {
 params_grid = [
     {
         "seed": [0, 1, 2],
+        # "use_returns": [True, False],
+        # "actor_batch_size": [64],
+        # "batch_size": [32],
+        # "virtual_batch_size": [32],
+        # "ttyrec_batch_size": [32],
     },
 ]
 
